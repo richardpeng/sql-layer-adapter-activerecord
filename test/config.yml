@@ -1,0 +1,19 @@
+default_connection: akibantest
+
+default_connection_info: &default_connection_info
+  adapter: akiban
+  mode: <%= ENV['ARCONN'] || 'akibantest' %>
+  host: <%= ENV['ACTIVERECORD_UNITTEST_HOST'] || 'localhost' %>
+  port: <%= ENV['ACTIVERECORD_UNITTEST_PORT'] || 15432 %>
+  database: activerecord_unittest
+  username: <%= ENV['ACTIVERECORD_UNITTEST_USER'] || 'rails' %>
+  password: <%= ENV['ACTIVERECORD_UNITTEST_PASS'] || 'rails' %>
+
+connections:
+
+  akibantest:
+    arunit:
+      <<: *default_connection_info
+    arunit2:
+      <<: *default_connection_info
+      database: activerecord_unittest2
