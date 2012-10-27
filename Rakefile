@@ -2,6 +2,10 @@ require 'rake'
 require 'rake/testtask'
 require 'rubygems/package_task'
 
+ar_path = Gem.loaded_specs['activerecord'].full_gem_path
+require File.expand_path(File.dirname(ar_path)) + "/activerecord/test/config"
+require File.expand_path(File.dirname(ar_path)) + "/activerecord/test/support/config"
+
 def name
   Dir['*.gemspec'].first.split('.').first
 end
@@ -32,6 +36,9 @@ Rake::TestTask.new do |t|
   #t.test_files = FileList['test/test*.rb']
   t.test_files = test_files
   t.verbose = true
+  config = ARTest.config['connections']
+  require 'pp'
+  pp config
 end
 
 task :default => :test
