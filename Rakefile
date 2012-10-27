@@ -33,12 +33,8 @@ end
 
 Rake::TestTask.new do |t|
   t.libs << ['lib', 'test', "#{File.join(Gem.loaded_specs['activerecord'].full_gem_path,'test')}"]
-  #t.test_files = FileList['test/test*.rb']
   t.test_files = test_files
   t.verbose = true
-  config = ARTest.config['connections']
-  require 'pp'
-  pp config
 end
 
 task :default => :test
