@@ -40,6 +40,28 @@ module ActiveRecord
           end_sql
         end
 
+        # Maps logical Rails types to Akiban-specific data types.
+        def type_to_sql(type, limit = nil, precision = nil, scale = nil)
+          case type.to_s
+          when 'integer'
+            return 'integer' unless limit
+            case limit
+              when 1, 2; 'smallint'
+              when 3, 4; 'integer'
+              when 5..8; 'bigint'
+              else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a numeric with precision 0 instead.")
+            end
+          when 'decimal'
+            # Akiban supports precision up to 31
+            if precision > 32
+              precision = 31
+            end
+            super
+          else
+            super
+          end
+        end
+
         protected
 
         # AKIBAN SPECIFIC =======================================
