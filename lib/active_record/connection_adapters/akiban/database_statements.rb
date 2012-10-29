@@ -43,17 +43,6 @@ module ActiveRecord
           log(sql, name, binds) do
             result = binds.empty? ? exec_no_cache(sql, binds) :
                                     exec_cache(sql, binds)
-            types = {}
-            result.fields.each_with_index do |fname, i|
-              ftype = result.ftype i
-              fmod  = result.fmod i
-              #types[fname] = OID::TYPE_MAP.fetch(ftype, fmod) { |oid, mod|
-              #  warn "unknown OID: #{fname}(#{oid}) (#{sql})"
-              #  OID::Identity.new
-              #}
-            end
-
-            #ret = ActiveRecord::Result.new(result.fields, result.values, types)
             ret = ActiveRecord::Result.new(result.fields, result.values)
             result.clear
             return ret
@@ -65,24 +54,16 @@ module ActiveRecord
         end
 
         def exec_cache(sql, binds)
-          begin
-            # TODO: caching
-            stmt_key = (0...8).map{65.+(rand(26)).chr}.join
-            @connection.prepare(stmt_key, sql)
-            # clear the queue
-            @connection.get_last_result
-            @connection.send_query_prepared(stmt_key, binds.map { |col, val|
-              type_cast(val, col)
-            })
-            @connection.block
-            @connection.get_last_result
-          rescue PGError => e
-            begin
-              code = e.result.result_error_field(PGresult::PG_DIAG_SQLSTATE)
-            rescue
-              raise e
-            end
-          end
+          # TODO: caching & proper stmt key generation
+          stmt_key = (0...8).map{65.+(rand(26)).chr}.join
+          @connection.prepare(stmt_key, sql)
+          # clear the queue
+          @connection.get_last_result
+          @connection.send_query_prepared(stmt_key, binds.map { |col, val|
+            type_cast(val, col)
+          })
+          @connection.block
+          @connection.get_last_result
         end
 
         def type_cast(value, col)
