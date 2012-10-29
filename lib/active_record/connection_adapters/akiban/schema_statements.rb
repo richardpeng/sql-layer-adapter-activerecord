@@ -36,7 +36,7 @@ module ActiveRecord
           exec_query(<<-end_sql).rows
             SELECT table_name
             FROM information_schema.tables
-            WHERE table_schema = '#{quote_table_name(name)}'
+            WHERE table_schema = '#{name}'
           end_sql
         end
 
@@ -81,7 +81,7 @@ module ActiveRecord
           exec_query(<<-end_sql).rows
             SELECT c.column_name, c.type, c.nullable
             FROM information_schema.columns c
-            WHERE c.table_name = '#{quote_table_name(table_name)}'
+            WHERE c.table_name = '#{table_name}'
             ORDER BY c.position
           end_sql
         end
