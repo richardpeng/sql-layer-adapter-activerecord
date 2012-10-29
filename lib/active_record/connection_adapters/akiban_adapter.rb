@@ -2,6 +2,7 @@ require 'active_record'
 require 'active_record/base'
 require 'active_record/connection_adapters/abstract_adapter'
 require 'active_record/connection_adapters/akiban/database_statements'
+require 'active_record/connection_adapters/akiban/quoting'
 require 'active_record/connection_adapters/akiban/schema_statements'
 require 'arel/visitors/bind_visitor'
 
@@ -46,6 +47,7 @@ module ActiveRecord
     class AkibanAdapter < AbstractAdapter
 
       include Akiban::DatabaseStatements
+      include Akiban::Quoting
       include Akiban::SchemaStatements
 
       class BindSubstitution < Arel::Visitors::PostgreSQL
