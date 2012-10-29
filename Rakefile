@@ -37,7 +37,23 @@ Rake::TestTask.new do |t|
   t.verbose = true
 end
 
+task :build_databases do
+  config = ARTest.config['connections']['akibantest']
+  %x( psql -h #{config['arunit']['host']} -p #{config['arunit']['port']} -c "CREATE SCHEMA #{config['arunit']['database']}")
+  %x( psql -h #{config['arunit2']['host']} -p #{config['arunit2']['port']} -c "CREATE SCHEMA #{config['arunit2']['database']}")
+end
+
+task :drop_databases do
+  config = ARTest.config['connections']['akibantest']
+  %x( psql -h #{config['arunit']['host']} -p #{config['arunit']['port']} -c "DROP SCHEMA #{config['arunit']['database']} CASCADE" )
+  %x( psql -h #{config['arunit2']['host']} -p #{config['arunit2']['port']} -c "DROP SCHEMA #{config['arunit2']['database']} CASCADE" )
+end
+
+task :rebuild_databases => [:drop_databases, :build_databases]
+
 task :default => :test
+
+# Misc       ------------------------------------------------------
 
 spec = eval(File.read('activerecord-akiban-adapter.gemspec'))
 
