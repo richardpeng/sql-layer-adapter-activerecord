@@ -26,6 +26,9 @@ module ActiveRecord
       # Map ActiveRecords param names to PGs.
       conn_params[:user] = conn_params.delete(:username) if conn_params[:username]
       conn_params[:dbname] = conn_params.delete(:database) if conn_params[:database]
+      #if conn_params[:dbname] == 'test'
+      #  conn_params[:dbname] = 'activerecord_unittest'
+      #end
 
       # The postgres drivers don't allow the creation of an unconnected PGconn object,
       # so just pass a nil connection object for the time being.
@@ -120,6 +123,20 @@ module ActiveRecord
 
       def reset!
         super
+      end
+
+      # ABSTRACT ADAPTER (MISC SUPPORT) =========================
+
+      def primary_key(table_name)
+        row = exec_query(<<-sql, 'SCHEMA', [[nil, table_name]]).rows.first
+          SELECT DISTINCT(ic.column_name)
+          FROM information_schema.indexes i,
+               information_schema.index_columns ic
+          WHERE i.table_name = ic.index_table_name
+          AND ic.index_table_name = '#{table_name}'
+          AND i.index_type = 'PRIMARY'
+        sql
+        row && row.first
       end
 
       protected
