@@ -41,8 +41,10 @@ module ActiveRecord
           res.values
         end
 
-        def execute(sql, name=nil)
-          @connection.query(sql)
+        def execute(sql, name = 'SQL')
+          log(sql, name) do
+            @connection.query(sql)
+          end
         end
 
         def exec_query(sql, name = 'SQL', binds = [])

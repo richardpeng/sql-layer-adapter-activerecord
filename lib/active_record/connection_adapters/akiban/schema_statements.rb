@@ -65,6 +65,36 @@ module ActiveRecord
           query('SELECT current_user')[0][0]
         end
 
+        def rename_table(old_name, new_name)
+          execute "RENAME TABLE #{quote_table_name(old_name)} TO #{quote_table_name(new_name)}"
+        end
+
+        def add_column(table_name, column_name, type, options = {})
+          add_column_sql = "ALTER TABLE #{quote_table_name(table_name)} ADD COLUMN #{quote_column_name(column_name)} #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
+          add_column_options!(add_column_sql, options)
+          execute add_column_sql
+        end
+
+        def change_column(table_name, column_name, type, options = {})
+          execute "ALTER TABLE #{quote_table_name(table_name)} ALTER COLUMN #{quote_column_name(column_name)} SET DATA TYPE #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
+          change_column_default(table_name, column_name, options[:default]) if options_include_default?(options)
+          change_column_null(table_name, column_name, options[:null], options[:default]) if options.key?(:null)
+        end
+
+        def change_column_default(table_name, column_name, default)
+          execute "ALTER TABLE #{quote_table_name(table_name)} ALTER COLUMN #{quote_column_name(column_name)} SET DEFAULT #{quote(default)}"
+        end
+
+        def change_column_null(table_name, column_name, null, default = nil)
+          execute("ALTER TABLE #{quote_table_name(table_name)} ALTER COLUMN #{quote_column_name(column_name)} #{null ? '' : 'NOT'} NULL")
+        end
+
+        def remove_column(table_name, *column_names)
+          column_names.flatten.each do |column_name|
+            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          end
+        end
+
         # Maps logical Rails types to Akiban-specific data types.
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type.to_s
