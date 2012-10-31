@@ -26,9 +26,6 @@ module ActiveRecord
       # Map ActiveRecords param names to PGs.
       conn_params[:user] = conn_params.delete(:username) if conn_params[:username]
       conn_params[:dbname] = conn_params.delete(:database) if conn_params[:database]
-      #if conn_params[:dbname] == 'test'
-      #  conn_params[:dbname] = 'activerecord_unittest'
-      #end
 
       # The postgres drivers don't allow the creation of an unconnected PGconn object,
       # so just pass a nil connection object for the time being.

@@ -27,6 +27,12 @@ module ActiveRecord
           return fields, results
         end
 
+        def query(sql, name = nil)
+          log(sql, name) do
+            result_as_array @connection.async_exec(sql)
+          end
+        end
+
         # create a 2D array representing the result set
         def result_as_array(res) #:nodoc:
           ftypes = Array.new(res.nfields) do |i|

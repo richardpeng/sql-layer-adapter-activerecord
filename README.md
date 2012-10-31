@@ -4,7 +4,7 @@ The Akiban adapter for ActiveRecord.
 
 ## Contributing
 
-If you wouldd like to contribute a feature or bugfix, thanks! To make
+If you would like to contribute a feature or bugfix, thanks! To make
 sure your fix/feature has a high chance of being added, please read the
 following guidelines. First, ask on the Google list, IRC, or post a
 ticket on github issues. Second, make sure there are tests! We will not

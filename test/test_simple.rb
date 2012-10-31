@@ -25,7 +25,7 @@ class AkibanSimpleTest < Test::Unit::TestCase
 
     ActiveRecord::Base.establish_connection(
                                             :adapter  => 'akiban',
-                                            :database => 'test',
+                                            :database => 'activerecord_unittest',
                                             :host     => '127.0.0.1',
                                             :port     => '15432',
                                             :username => 'what',
