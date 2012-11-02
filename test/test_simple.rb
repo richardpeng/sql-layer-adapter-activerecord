@@ -79,7 +79,7 @@ class AkibanSimpleTest < Test::Unit::TestCase
     myself = User.create do |u|
       u.first_name = "Padraig"
       u.last_name = "O'Sullivan"
-      u.email = "posullivan@akiban.com"
+      u.email = "posulliv@akiban.com"
       u.user_name = "posulliv"
       u.admin = false
     end

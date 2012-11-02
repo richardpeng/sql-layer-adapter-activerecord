@@ -43,7 +43,7 @@ module ActiveRecord
 
         def execute(sql, name = 'SQL')
           log(sql, name) do
-            @connection.query(sql)
+            @connection.async_exec(sql)
           end
         end
 

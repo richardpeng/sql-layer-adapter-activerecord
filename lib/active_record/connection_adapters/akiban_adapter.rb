@@ -140,6 +140,17 @@ module ActiveRecord
 
       # AKIBAN SPECIFIC =========================================
 
+      UNIQUE_VIOLATION = "23501"
+
+      def translate_exception(exception, message)
+        case exception.result.try(:error_field, PGresult::PG_DIAG_SQLSTATE)
+        when UNIQUE_VIOLATION
+          RecordNotUnique.new(message, exception)
+        else
+          super
+        end
+      end
+
       def connect
         @connection = PGconn.connect(@connection_parameters)
       end

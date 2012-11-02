@@ -59,6 +59,14 @@ module ActiveRecord
           sql
         end
 
+        def schema_exists?(name)
+          exec_query(<<-sql, 'SCHEMA').rows.first[0].to_i > 0
+            SELECT COUNT(*)
+            FROM   information_schema.schemata
+            WHERE schema_name = '#{name}'
+          sql
+        end
+
         # Returns the current schema name.
         # TODO: use current_schema function when it is available.
         def current_schema
