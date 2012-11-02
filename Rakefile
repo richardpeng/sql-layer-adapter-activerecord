@@ -2,17 +2,12 @@ require 'rake'
 require 'rake/testtask'
 require 'rubygems/package_task'
 
+SUDO = ENV['SUDO'] || 'sudo'
+NAME = 'activerecord-akiban-adapter'
+VERSION = File.read(File.expand_path("../VERSION",__FILE__)).strip
 ar_path = Gem.loaded_specs['activerecord'].full_gem_path
 require File.expand_path(File.dirname(ar_path)) + "/activerecord/test/config"
 require File.expand_path(File.dirname(ar_path)) + "/activerecord/test/support/config"
-
-def name
-  Dir['*.gemspec'].first.split('.').first
-end
-
-def version
-  File.read(File.expand_path("../VERSION",__FILE__)).strip
-end
 
 def test_files()
   files = Dir.glob("test/test*.rb")
@@ -23,13 +18,17 @@ def test_files()
   files
 end
 
+### RDOC
+
 require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "#{name} #{version}"
+  rdoc.title = "#{NAME} #{VERSION}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+### UNIT TESTS
 
 Rake::TestTask.new do |t|
   t.libs << ['lib', 'test', "#{File.join(Gem.loaded_specs['activerecord'].full_gem_path,'test')}"]
@@ -53,13 +52,7 @@ task :rebuild_databases => [:drop_databases, :build_databases]
 
 task :default => :test
 
-# Misc       ------------------------------------------------------
-
-spec = eval(File.read('activerecord-akiban-adapter.gemspec'))
-
-Gem::PackageTask.new(spec) do |p| 
-  p.gem_spec = spec
-end
+### MISC
 
 task :lines do
   lines, codelines, total_lines, total_codelines = 0, 0, 0, 0
@@ -85,11 +78,30 @@ task :lines do
   puts "Total: Lines #{total_lines}, LOC #{total_codelines}"
 end
 
-# Publishing ------------------------------------------------------
+desc "Print activerecord-akiban-adapter version"
+task :version do
+    puts VERSION
+end
 
-desc "Release to gemcutter"
-task :release => :package do
-  require 'rake/gemcutter'
-  Rake::Gemcutter::Tasks.new(spec).define
-  Rake::Task['gem:push'].invoke
+### GEM PACKAGING AND RELEASE
+
+desc "Packages activerecord-akiban-adapter"
+task :package=>[:clean] do |p| 
+    load './activerecord-akiban-adapter.gemspec'
+      Gem::Builder.new(AKIBAN_GEMSPEC).build
+end
+
+desc "Install activerecord-akiban-adapter gem"
+task :install=>[:package] do
+    sh %{#{SUDO} gem install ./#{NAME}-#{VERSION} --local}
+end
+
+desc "Uninstall activerecord-akiban-adapter gem"
+task :uninstall=>[:clean] do
+    sh %{#{SUDO} gem uninstall #{NAME}}
+end
+
+desc "Upload activerecord-akiban-adapter gem to gemcutter"
+task :release=>[:package] do
+    sh %{gem push ./#{NAME}-#{VERSION}.gem}
 end

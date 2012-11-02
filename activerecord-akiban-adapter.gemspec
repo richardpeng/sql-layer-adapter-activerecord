@@ -1,4 +1,4 @@
-Gem::Specification.new do |s|
+AKIBAN_GEMSPEC = Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.name         = 'activerecord-akiban-adapter'
   s.version      = File.read(File.expand_path("../VERSION",__FILE__)).strip

@@ -12,7 +12,7 @@ accept any patch that is not tested. Please read the
 `RUNNING_UNIT_TESTS` file for the details of how to run the unit tests.
 
 * Github: http://github.com/akiban/activerecord-akibanr-adapter
-* Google Group: http://groups.google.com/group/rails-akiban-adapter
+* Google Group: https://groups.google.com/a/akiban.com/d/forum/akiban-user
 * IRC Room: #akiban on irc.freenode.net
 
 ## License
