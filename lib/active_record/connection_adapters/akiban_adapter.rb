@@ -153,6 +153,8 @@ module ActiveRecord
 
       def connect
         @connection = PGconn.connect(@connection_parameters)
+        # swallow warnings for now
+        @connection.set_notice_receiver { |proc| }
       end
 
     end # AkibanAdapter
