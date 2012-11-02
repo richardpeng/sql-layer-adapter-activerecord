@@ -59,6 +59,34 @@ module ActiveRecord
           sql
         end
 
+        def indexes(table_name, name = nil)
+          result = query(<<-sql, 'SCHEMA')
+            SELECT   DISTINCT i.index_name, i.is_unique
+            FROM     information_schema.indexes i
+            WHERE    i.table_name = '#{table_name}'
+            ORDER BY i.index_name
+          sql
+
+          indexes = []
+          result.map do |row|
+            index_name = row[0]
+            unique = row[1] == 'YES'
+            idx_columns = Hash[query(<<-sql, 'SCHEMA')]
+              SELECT ic.column_name, ic.is_ascending
+              FROM   information_schema.index_columns ic
+              WHERE  ic.index_table_name = '#{table_name}'
+                     AND ic.index_name = '#{index_name}'
+              sql
+
+            unless idx_columns.empty?
+              # TODO: use the ASC/DESC information for each index column
+              indexes << IndexDefinition.new(table_name, index_name, unique, idx_columns.keys)
+            end
+          end
+
+          indexes
+        end
+
         def schema_exists?(name)
           exec_query(<<-sql, 'SCHEMA').rows.first[0].to_i > 0
             SELECT COUNT(*)
