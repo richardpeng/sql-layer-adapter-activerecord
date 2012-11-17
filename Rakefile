@@ -1,7 +1,9 @@
 require 'rake'
+require 'rake/clean'
 require 'rake/testtask'
 require 'rubygems/package_task'
 
+CLEAN.include ["**/.*.sw?", "activereocrd-*.gem", ".config", "rdoc", "coverage", '**/*.rbc']
 SUDO = ENV['SUDO'] || 'sudo'
 NAME = 'activerecord-akiban-adapter'
 VERSION = File.read(File.expand_path("../VERSION",__FILE__)).strip
