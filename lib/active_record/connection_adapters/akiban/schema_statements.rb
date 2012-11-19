@@ -33,10 +33,11 @@ module ActiveRecord
         end
 
         def tables(name = nil)
-          exec_query(<<-end_sql).rows
+          query(<<-end_sql).map { |row| row[0] }
             SELECT table_name
             FROM information_schema.tables
-            WHERE table_schema = '#{name}'
+            #{name ? "WHERE table_schema = '#{name}'" : ""}
+            ORDER BY table_name
           end_sql
         end
 
@@ -64,6 +65,8 @@ module ActiveRecord
             SELECT   DISTINCT i.index_name, i.is_unique
             FROM     information_schema.indexes i
             WHERE    i.table_name = '#{table_name}'
+            AND      i.index_type <> 'PRIMARY'
+            AND      i.index_name <> 'id'
             ORDER BY i.index_name
           sql
 
