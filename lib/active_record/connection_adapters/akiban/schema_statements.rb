@@ -156,6 +156,23 @@ module ActiveRecord
           end
         end
 
+        # Returns a SELECT DISTINCT clause for a given set of columns
+        # and a given ORDER BY clause.
+        #
+        # Akiban requires that the ORDER BY columns in the SELECT list
+        # for DISTINCT queries, and requires that the ORDER BY include
+        # the DISTINCT column.
+        def distinct(columns, orders) #:nodoc:
+          return "DISTINCT #{columns}" if orders.empty?
+          # Construct a clean list of column names from the ORDER BY clause, removing
+          # any ASC/DESC modifiers
+          order_columns = orders.collect { |s| s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '') }
+          order_columns.delete_if { |c| c.blank? }
+          order_columns = order_columns.zip((0...order_columns.size).to_a).map { |s,i| "#{s} AS alias_#{i}" }
+
+          "DISTINCT #{columns}, #{order_columns * ', '}"
+        end
+
         protected
 
         # AKIBAN SPECIFIC =======================================
