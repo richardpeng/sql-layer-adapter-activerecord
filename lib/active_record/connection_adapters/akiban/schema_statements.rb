@@ -25,6 +25,20 @@ module ActiveRecord
           NATIVE_DATABASE_TYPES
         end
 
+        def recreate_database(name, options = {})
+          drop_database(name)
+          create_database(name, options)
+        end
+
+        def create_database(name, options = {})
+          # TODO: use options
+          execute "CREATE SCHEMA #{quote_table_name(name)}"
+        end
+
+        def drop_database(name)
+          execute "DROP SCHEMA IF EXISTS #{quote_table_name(name)} CASCADE"
+        end
+
         def columns(table_name, name = nil)
           return [] if table_name.blank?
           column_definitions(table_name).map do |column_name, type, nullable|
