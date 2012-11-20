@@ -32,7 +32,7 @@ class AkibanSimpleTest < Test::Unit::TestCase
                                             :password => 'what'
                                            )
 
-    ActiveRecord::Schema.drop_table(User.table_name) rescue nil
+    ActiveRecord::Schema.drop_table(User.table_name, :drop_group => true) rescue nil
 
     ActiveRecord::Schema.drop_table(Addr.table_name) rescue nil
 
@@ -44,13 +44,14 @@ class AkibanSimpleTest < Test::Unit::TestCase
         t.string :user_name, :limit => 20
         t.boolean :admin
       end
-      create_table Addr.table_name do |t|
+      create_table(Addr.table_name) do |t|
         t.integer :user_id
         t.string :street, :limit => 20
         t.string :city, :limit => 20
         t.string :zip, :limit => 6
       end
     end
+    ActiveRecord::Schema.add_grouping_foreign_key(Addr.table_name, User.table_name, 'user_id')
 
   end
 

@@ -152,6 +152,29 @@ module ActiveRecord
           execute "DROP INDEX #{quote_table_name(index_name)}"
         end
 
+        def add_grouping_foreign_key(child_table, parent_table, child_column, parent_column = nil)
+            add_grouping(child_table, parent_table, child_column, parent_column)
+        end
+
+        def drop_grouping_foreign_key(child_table)
+          remove_grouping(child_table)
+        end
+
+        def create_table(table_name, options = {})
+          super(table_name, options)
+          if options[:grouping_foreign_key]
+            add_grouping(table_name, options[:parent_table], options[:grouping_foreign_key])
+          end
+        end
+
+        def drop_table(table_name, options = {})
+          if options[:drop_group]
+            execute "DROP GROUP #{quote_table_name(table_name)}"
+          else
+            super(table_name, options)
+          end
+        end
+
         # Maps logical Rails types to Akiban-specific data types.
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type.to_s
@@ -230,6 +253,14 @@ module ActiveRecord
         end
 
       private
+
+        def add_grouping(child_table, parent_table, child_column, parent_column = nil)
+          execute "ALTER TABLE #{quote_table_name(child_table)} ADD GROUPING FOREIGN KEY (#{quote_column_name(child_column)}) REFERENCES #{quote_table_name(parent_table)} #{"(#{quote_column_name(quote_parent_column)})" if parent_column}"
+        end
+
+        def remove_grouping(child_table)
+          execute "ALTER TABLE #{quote_table_name(child_table)} DROP GROUPING FORIEGN KEY"
+        end
 
         def extract_schema_and_table(name)
           table, schema = name.scan(/[^".\s]+|"[^"]*"/)[0..1].collect{|m| m.gsub(/(^"|"$)/,'') }.reverse
