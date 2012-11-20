@@ -148,6 +148,10 @@ module ActiveRecord
           end
         end
 
+        def remove_index!(table_name, index_name) #:nodoc:
+          execute "DROP INDEX #{quote_table_name(index_name)}"
+        end
+
         # Maps logical Rails types to Akiban-specific data types.
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type.to_s
