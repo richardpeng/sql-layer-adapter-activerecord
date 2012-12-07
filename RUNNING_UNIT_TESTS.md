@@ -12,7 +12,9 @@ bundle exec rake test ARCONFIG="$PWD/test/config.yml"
 ```
 
 The tests of this adapter depend on the existence of the Rails source
-code which is automatically cloned for you at version 3.1 with `bundler`.
+code which is automatically cloned for you at the latest version of
+rails with `bundler`.
+
 However you can clone Rails from git://github.com/rails/rails.git and
 set the `RAILS_SOURCE` environment variable so bundler will use another
 local path instead.
