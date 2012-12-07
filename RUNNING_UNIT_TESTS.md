@@ -47,7 +47,7 @@ index 8a3dfbb..3dfa18c 100644
 The default names for the test databases are `activerecord_unittest` and
 `activerecord_unittest2`. 
 
-## Current Execpted Failures
+## Current Expected Failures
 
 The majority of these fail because Akiban does not support a certain feature
 right now.
