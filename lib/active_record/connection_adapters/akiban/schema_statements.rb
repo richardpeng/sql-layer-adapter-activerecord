@@ -241,14 +241,15 @@ module ActiveRecord
 
         # Return the name of the sequence associated with the given
         # column from the given table.
-        def get_seq_name(table_name, col_name)
+        def get_seq_name(table_name, schema_name, col_name)
           #table_name.gsub!(/"/, '')
           #col_name.gsub!(/"/, '')
           row = exec_query(<<-end_sql).rows.first
             SELECT c.sequence_name
             FROM   information_schema.columns c
             WHERE  c.table_name = '#{table_name}'
-                   AND c.column_name = '#{col_name}'
+            AND c.schema_name = '#{schema_name}'
+            AND c.column_name = '#{col_name}'
           end_sql
           row && row.first
         end
