@@ -50,7 +50,7 @@ module ActiveRecord
           query(<<-end_sql).map { |row| row[0] }
             SELECT table_name
             FROM information_schema.tables
-            #{name ? "WHERE table_schema = '#{name}'" : ""}
+            WHERE table_schema = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
             ORDER BY table_name
           end_sql
         end
@@ -70,7 +70,7 @@ module ActiveRecord
             SELECT COUNT(*)
             FROM information_schema.tables
             WHERE table_name = $1
-            #{schema ? 'AND table_schema = $2' : ''}
+            AND table_schema = #{schema ? "'#{schema}'" : "CURRENT_SCHEMA"}
           sql
         end
 
@@ -79,6 +79,7 @@ module ActiveRecord
             SELECT   DISTINCT i.index_name, i.is_unique
             FROM     information_schema.indexes i
             WHERE    i.table_name = '#{table_name}'
+            AND      i.schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
             AND      i.index_type <> 'PRIMARY'
             AND      i.index_name <> 'id'
             ORDER BY i.index_name
@@ -92,6 +93,7 @@ module ActiveRecord
               SELECT ic.column_name, ic.is_ascending
               FROM   information_schema.index_columns ic
               WHERE  ic.index_table_name = '#{table_name}'
+                     AND ic.schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
                      AND ic.index_name = '#{index_name}'
               sql
 
@@ -113,9 +115,8 @@ module ActiveRecord
         end
 
         # Returns the current schema name.
-        # TODO: use current_schema function when it is available.
         def current_schema
-          query('SELECT current_user')[0][0]
+          query('SELECT current_schema')[0][0]
         end
 
         def rename_table(old_name, new_name)
