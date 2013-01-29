@@ -125,13 +125,12 @@ module ActiveRecord
       # ABSTRACT ADAPTER (MISC SUPPORT) =========================
 
       def primary_key(table_name)
-        row = exec_query(<<-sql, 'SCHEMA', [[nil, table_name]]).rows.first
+        row = exec_query(<<-sql, 'SCHEMA').rows.first
           SELECT DISTINCT(ic.column_name)
-          FROM information_schema.indexes i,
-               information_schema.index_columns ic
-          WHERE i.table_name = ic.index_table_name
-          AND ic.index_table_name = '#{table_name}'
-          AND i.index_type = 'PRIMARY'
+          FROM information_schema.index_columns ic
+          WHERE ic.index_table_name = '#{table_name}'
+          AND ic.schema_name = CURRENT_SCHEMA
+          AND ic.index_name = 'PRIMARY'
         sql
         row && row.first
       end
