@@ -94,7 +94,7 @@ module ActiveRecord
 
           # TODO: how does postgresql handle this?
           # get the sequence name for the PK of this table
-          seq_name = get_seq_name(table_name, 'id')
+          seq_name = get_seq_name(table_name, current_schema, 'id')
           execute "SELECT NEXTVAL('#{current_schema}', '#{seq_name}')" if seq_name
 
           key_list   = []
