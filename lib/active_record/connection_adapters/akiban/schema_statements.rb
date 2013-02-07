@@ -41,7 +41,7 @@ module ActiveRecord
 
         def columns(table_name, name = nil)
           return [] if table_name.blank?
-          column_definitions(table_name, name).map do |column_name, type, nullable|
+          column_definitions(table_name).map do |column_name, type, nullable|
             AkibanColumn.new(column_name, nil, type, nullable == 'YES')
           end
         end
@@ -230,12 +230,12 @@ module ActiveRecord
         #  ORDER BY c.position
         #
         # TODO: default values need to be retrieved.
-        def column_definitions(table_name, name)
+        def column_definitions(table_name)
           exec_query(<<-end_sql).rows
             SELECT c.column_name, c.type, c.nullable
             FROM information_schema.columns c
             WHERE c.table_name = '#{table_name}'
-            AND c.schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
+            AND c.schema_name = CURRENT_SCHEMA
             ORDER BY c.position
           end_sql
         end
