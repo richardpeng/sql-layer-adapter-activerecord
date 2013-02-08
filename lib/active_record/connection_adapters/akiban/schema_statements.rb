@@ -235,6 +235,7 @@ module ActiveRecord
             SELECT c.column_name, c.type, c.nullable
             FROM information_schema.columns c
             WHERE c.table_name = '#{table_name}'
+            AND c.schema_name = CURRENT_SCHEMA
             ORDER BY c.position
           end_sql
         end
