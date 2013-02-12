@@ -106,6 +106,22 @@ module ActiveRecord
           execute "INSERT INTO #{quote_table_name(table_name)} (#{key_list.join(', ')}) VALUES (#{value_list.join(', ')})", 'Fixture Insert'
         end
 
+      def begin_db_transaction
+        execute "BEGIN"
+      end
+
+      def commit_db_transaction
+        execute "COMMIT"
+      end
+
+      def rollback_db_transaction
+        execute "ROLLBACK"
+      end
+
+      def outside_transaction?
+        @connection.transaction_status == PGconn::PQTRANS_IDLE
+      end
+
       end # DatabaseStatements
 
     end # Akiban
