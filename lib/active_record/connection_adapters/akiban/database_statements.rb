@@ -57,6 +57,17 @@ module ActiveRecord
           end
         end
 
+        def exec_delete(sql, name = 'SQL', binds = [])
+          log(sql, name, binds) do
+            result = binds.empty? ? exec_no_cache(sql, binds) :
+                                    exec_cache(sql, binds)
+            affected = result.cmd_tuples
+            result.clear
+            affected
+          end
+        end
+        alias :exec_update :exec_delete
+
         def exec_no_cache(sql, binds)
           @connection.async_exec(sql)
         end
