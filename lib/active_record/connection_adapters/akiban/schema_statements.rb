@@ -150,7 +150,7 @@ module ActiveRecord
         end
 
         def remove_index!(table_name, index_name) #:nodoc:
-          execute "DROP INDEX #{quote_table_name(index_name)}"
+          execute "DROP INDEX #{quote_table_name(table_name)}.#{quote_table_name(index_name)}"
         end
 
         def add_grouping_foreign_key(child_table, parent_table, child_column, parent_column = nil)
