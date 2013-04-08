@@ -9,7 +9,7 @@ module ActiveRecord
        NATIVE_DATABASE_TYPES = {
           primary_key: "serial primary key",
           string:      { name: "varchar", limit: 255 },
-          text:        { name: "blob" },
+          text:        { name: "clob" },
           integer:     { name: "integer" },
           float:       { name: "float" },
           decimal:     { name: "decimal" },
