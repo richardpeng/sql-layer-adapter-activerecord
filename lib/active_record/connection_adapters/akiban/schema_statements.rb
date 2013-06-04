@@ -149,6 +149,11 @@ module ActiveRecord
           end
         end
 
+        def rename_column(table_name, column_name, new_column_name)
+          clear_cache!
+          execute "ALTER TABLE #{quote_table_name(table_name)} RENAME COLUMN #{quote_column_name(column_name)} TO #{quote_column_name(new_column_name)}"
+        end
+
         def remove_index!(table_name, index_name) #:nodoc:
           execute "DROP INDEX #{quote_table_name(table_name)}.#{quote_table_name(index_name)}"
         end
