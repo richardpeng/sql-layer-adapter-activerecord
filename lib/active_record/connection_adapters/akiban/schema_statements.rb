@@ -41,8 +41,8 @@ module ActiveRecord
 
         def columns(table_name, name = nil)
           return [] if table_name.blank?
-          column_definitions(table_name).map do |column_name, type, nullable|
-            AkibanColumn.new(column_name, nil, type, nullable == 'YES')
+          column_definitions(table_name).map do |column_name, type, default, nullable|
+            AkibanColumn.new(column_name, default, type, nullable == 'YES')
           end
         end
 
@@ -226,18 +226,9 @@ module ActiveRecord
 
         # Returns the list of a table's column names, data types, and default
         # values.
-        #
-        # The underlying query is roughly:
-        #
-        #  SELECT c.column_name, c.type, c.nullable
-        #  FROM information_schema.columns c
-        #  WHERE c.table_name = 'table_name'
-        #  ORDER BY c.position
-        #
-        # TODO: default values need to be retrieved.
         def column_definitions(table_name)
           exec_query(<<-end_sql).rows
-            SELECT c.column_name, c.type, c.nullable
+            SELECT c.column_name, c.type, c.column_default, c.nullable
             FROM information_schema.columns c
             WHERE c.table_name = '#{table_name}'
             AND c.schema_name = CURRENT_SCHEMA
