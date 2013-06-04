@@ -50,7 +50,14 @@ module ActiveRecord
       include Akiban::Quoting
       include Akiban::SchemaStatements
 
-      class BindSubstitution < Arel::Visitors::PostgreSQL
+      class Arel::Visitors::Akiban < Arel::Visitors::PostgreSQL
+        # Don't support FOR UPDATE (and don't have row locks anyway).
+        def visit_Arel_Nodes_Lock o
+          nil
+        end
+      end
+
+      class BindSubstitution < Arel::Visitors::Akiban
         include Arel::Visitors::BindVisitor
       end
 
@@ -59,9 +66,8 @@ module ActiveRecord
       # Initializes and connects an Akiban adapter.
       def initialize(connection, logger, connection_parameters, config)
         super(connection, logger)
-        # we can reuse from PostgreSQL adapter here
         if config.fetch(:prepared_statements) { true}
-          @visitor = Arel::Visitors::PostgreSQL.new self
+          @visitor = Arel::Visitors::Akiban.new self
         else
           @visitor = BindSubstitution.new self
         end
