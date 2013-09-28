@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module Akiban
+    module FDBSQL
 
       module Quoting
 
@@ -28,7 +28,7 @@ module ActiveRecord
           PGconn.unescape_bytea(value) if value
         end
 
-        # Quotes Akiban-specific data types for SQL input.
+        # Quotes FoundationDB SQL-specific data types for SQL input.
         def quote(value, column = nil) #:nodoc:
           return super unless column
 
@@ -97,7 +97,7 @@ module ActiveRecord
 
       end # Quoting
 
-    end # Akiban
+    end # FDBSQL
 
   end # ConnectionAdapters
 

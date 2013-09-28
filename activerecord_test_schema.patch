@@ -7,7 +7,7 @@ index 8a3dfbb..3dfa18c 100644
    end
  
 -  except 'SQLite' do
-+  except ['SQLite', 'Akiban'] do
++  except ['SQLite', 'FDBSQL'] do
      # fk_test_has_fk should be before fk_test_has_pk
      create_table :fk_test_has_fk, :force => true do |t|
        t.integer :fk_id, :null => false

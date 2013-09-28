@@ -1,17 +1,16 @@
-default_connection: akibantest
+default_connection: fdbsqltest
 
 default_connection_info: &default_connection_info
-  adapter: akiban
-  mode: <%= ENV['ARCONN'] || 'akibantest' %>
+  adapter: fdbsql
+  mode: <%= ENV['ARCONN'] || 'fdbsqltest' %>
   host: <%= ENV['ACTIVERECORD_UNITTEST_HOST'] || 'localhost' %>
   port: <%= ENV['ACTIVERECORD_UNITTEST_PORT'] || 15432 %>
   database: activerecord_unittest
-  username: <%= ENV['ACTIVERECORD_UNITTEST_USER'] || 'rails' %>
-  password: <%= ENV['ACTIVERECORD_UNITTEST_PASS'] || 'rails' %>
+  username: <%= ENV['ACTIVERECORD_UNITTEST_USER'] || 'user' %>
+  password: <%= ENV['ACTIVERECORD_UNITTEST_PASS'] || 'password' %>
 
 connections:
-
-  akibantest:
+  fdbsqltest:
     arunit:
       <<: *default_connection_info
     arunit2:

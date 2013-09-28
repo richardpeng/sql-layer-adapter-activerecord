@@ -1,19 +1,19 @@
 require 'active_record'
 require 'active_record/base'
 require 'active_record/connection_adapters/abstract_adapter'
-require 'active_record/connection_adapters/akiban/database_statements'
-require 'active_record/connection_adapters/akiban/quoting'
-require 'active_record/connection_adapters/akiban/schema_statements'
+require 'active_record/connection_adapters/fdbsql/database_statements'
+require 'active_record/connection_adapters/fdbsql/quoting'
+require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'arel/visitors/bind_visitor'
 
-# Akiban implements the PostgreSQL protocol
+# FoundationDB SQL Layer implements the PostgreSQL protocol
 require 'pg'
 
 module ActiveRecord
 
   class Base
 
-    def self.akiban_connection(config) #:nodoc:
+    def self.fdbsql_connection(config)
       conn_params = config.symbolize_keys
       # Forward any unused config params to PGconn.connect.
       [:statement_limit, :encoding, :min_messages, :schema_search_path,
@@ -29,45 +29,45 @@ module ActiveRecord
 
       # The postgres drivers don't allow the creation of an unconnected PGconn object,
       # so just pass a nil connection object for the time being.
-      ConnectionAdapters::AkibanAdapter.new(nil, logger, conn_params, config)
+      ConnectionAdapters::FDBSQLAdapter.new(nil, logger, conn_params, config)
     end
 
   end # Base
 
   module ConnectionAdapters
 
-    class AkibanColumn < Column
+    class FDBSQLColumn < Column
 
       def initialize(name, default, sql_type = nil, null = true)
         super(name, default, sql_type, null)
       end
 
-    end # AkibanColumn
+    end # FDBSQLColumn
 
-    class AkibanAdapter < AbstractAdapter
+    class FDBSQLAdapter < AbstractAdapter
 
-      include Akiban::DatabaseStatements
-      include Akiban::Quoting
-      include Akiban::SchemaStatements
+      include FDBSQL::DatabaseStatements
+      include FDBSQL::Quoting
+      include FDBSQL::SchemaStatements
 
-      class Arel::Visitors::Akiban < Arel::Visitors::PostgreSQL
+      class Arel::Visitors::FDBSQL < Arel::Visitors::PostgreSQL
         # Don't support FOR UPDATE (and don't have row locks anyway).
         def visit_Arel_Nodes_Lock o
           nil
         end
       end
 
-      class BindSubstitution < Arel::Visitors::Akiban
+      class BindSubstitution < Arel::Visitors::FDBSQL
         include Arel::Visitors::BindVisitor
       end
 
-      ADAPTER_NAME = 'Akiban'.freeze
+      ADAPTER_NAME = 'FDBSQL'.freeze
 
-      # Initializes and connects an Akiban adapter.
+      # Initializes and connects a FDBSQL adapter.
       def initialize(connection, logger, connection_parameters, config)
         super(connection, logger)
         if config.fetch(:prepared_statements) { true}
-          @visitor = Arel::Visitors::Akiban.new self
+          @visitor = Arel::Visitors::FDBSQL.new self
         else
           @visitor = BindSubstitution.new self
         end
@@ -143,7 +143,7 @@ module ActiveRecord
 
       protected
 
-      # AKIBAN SPECIFIC =========================================
+      # FOUNDATIONDB SQL SPECIFIC =========================================
 
       UNIQUE_VIOLATION = "23501"
 
@@ -162,7 +162,7 @@ module ActiveRecord
         @connection.set_notice_receiver { |proc| }
       end
 
-    end # AkibanAdapter
+    end # FDBSQLAdapter
 
   end # ConnectionAdapters
 

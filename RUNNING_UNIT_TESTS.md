@@ -1,14 +1,33 @@
 # How to Run Tests
 
-In a nutshell:
+## Unit Tests
 
 ```
-git clone git@github.com:akiban/activerecord-akiban-adapter.git
+<start FoundationDB SQL Layer>
+git clone git@github.com:FoundationDB/activerecord-fdbsql-adapter.git
 bundle install
-AR_PATH=$(bundle show activerecord)
-pushd $AR_PATH && git apply $OLDPWD/rails.patch && popd
-bundle exec rake rebuild_databases ARCONFIG="$PWD/test/config.yml"
-bundle exec rake test ARCONFIG="$PWD/test/config.yml"
+bundle exec rake test:unit
+```
+
+## ActiveRecord Tests
+
+### Patch Note
+
+You may notice a patch being applied in the section below. The
+ActiveRecord test suite attempts to create foreign keys by default.
+These are unsupported by the FoundationDB SQL Layer. These keys are
+already skipped when running against SQLite so the patch adds the
+FDBSQL adapter to the skip list as well. View the patch file (e.g
+`cat activerecord_test_schema.patch` ) to see the exact location
+and contents of change.
+
+```
+<start FoundationDB SQL Layer>
+git clone git@github.com:FoundationDB/activerecord-fdbsql-adapter.git
+bundle install
+cd $(bundle show activerecord) ; git apply "${OLDPWD}/activerecord_test_schema.patch" ; cd -
+bundle exec rake rebuild_databases ARCONFIG="${PWD}/test/config.yml"
+bundle exec rake test:activerecord ARCONFIG="${PWD}/test/config.yml"
 ```
 
 The tests of this adapter depend on the existence of the Rails source
@@ -19,29 +38,6 @@ However you can clone Rails from git://github.com/rails/rails.git and
 set the `RAILS_SOURCE` environment variable so bundler will use another
 local path instead.
 
-## Rails Patch
-
-You will notice that in order to run the unit tests a patch is applied
-to the rails source code that `bundler` installs. This patch is quite
-simple and its sole purpose is to make sure that tests which are not
-applicable to Akiban are skipped. The current contents of the patch are:
-
-```
-diff --git a/activerecord/test/schema/schema.rb b/activerecord/test/schema/schema.rb
-index 8a3dfbb..3dfa18c 100644
---- a/activerecord/test/schema/schema.rb
-+++ b/activerecord/test/schema/schema.rb
-@@ -746,7 +746,7 @@ ActiveRecord::Schema.define do
-     t.string 'a$b'
-   end
- 
--  except 'SQLite' do
-+  except ['SQLite', 'Akiban'] do
-     # fk_test_has_fk should be before fk_test_has_pk
-     create_table :fk_test_has_fk, :force => true do |t|
-       t.integer :fk_id, :null => false
-```
-
 ## Test Databases
 
 The default names for the test databases are `activerecord_unittest` and
@@ -49,8 +45,7 @@ The default names for the test databases are `activerecord_unittest` and
 
 ## Current Expected Failures
 
-The majority of these fail because Akiban does not support a certain feature
-right now.
+These are fail due to features unsupported by the FoundationDB SQL Layer.
 
 * test_disable_referential_integrity
 * test_foreign_key_violations_are_translated_to_specific_exception

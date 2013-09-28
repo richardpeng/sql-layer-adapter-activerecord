@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module Akiban
+    module FDBSQL
 
       module DatabaseStatements
 
@@ -135,7 +135,7 @@ module ActiveRecord
 
       end # DatabaseStatements
 
-    end # Akiban
+    end # FDBSQL
 
   end # ConectionAdapters
 

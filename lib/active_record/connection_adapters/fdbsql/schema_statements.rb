@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module Akiban
+    module FDBSQL
 
       module SchemaStatements
 
@@ -42,7 +42,7 @@ module ActiveRecord
         def columns(table_name, name = nil)
           return [] if table_name.blank?
           column_definitions(table_name).map do |column_name, type, default, nullable|
-            AkibanColumn.new(column_name, default, type, nullable == 'YES')
+            FDBSQLColumn.new(column_name, default, type, nullable == 'YES')
           end
         end
 
@@ -181,7 +181,7 @@ module ActiveRecord
           end
         end
 
-        # Maps logical Rails types to Akiban-specific data types.
+        # Maps logical Rails types to FoundationDB SQL-specific data types.
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type.to_s
           when 'integer'
@@ -193,7 +193,7 @@ module ActiveRecord
               else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a numeric with precision 0 instead.")
             end
           when 'decimal'
-            # Akiban supports precision up to 31
+            # FoundationDB SQL supports precision up to 31
             if precision > 32
               precision = 31
             end
@@ -206,7 +206,7 @@ module ActiveRecord
         # Returns a SELECT DISTINCT clause for a given set of columns
         # and a given ORDER BY clause.
         #
-        # Akiban requires that the ORDER BY columns in the SELECT list
+        # FoundationDB SQL requires that the ORDER BY columns in the SELECT list
         # for DISTINCT queries, and requires that the ORDER BY include
         # the DISTINCT column.
         def distinct(columns, orders) #:nodoc:
@@ -222,7 +222,7 @@ module ActiveRecord
 
         protected
 
-        # AKIBAN SPECIFIC =======================================
+        # FOUNDATIONDB SQL SPECIFIC =======================================
 
         # Returns the list of a table's column names, data types, and default
         # values.
@@ -268,7 +268,7 @@ module ActiveRecord
 
       end # SchemaStatements
 
-    end # Akiban
+    end # FDBSQL
 
   end # ConnectionAdapters
 

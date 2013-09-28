@@ -1,1 +1,0 @@
-require 'active_record/connection_adapters/akiban_adapter'

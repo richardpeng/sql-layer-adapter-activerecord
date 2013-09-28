@@ -19,17 +19,17 @@ class Addr < ActiveRecord::Base
   end
 end
 
-class AkibanSimpleTest < Test::Unit::TestCase
+class FDBSQLSimpleTest < Test::Unit::TestCase
 
   def setup()
 
     ActiveRecord::Base.establish_connection(
-                                            :adapter  => 'akiban',
+                                            :adapter  => 'fdbsql',
                                             :database => 'activerecord_unittest',
                                             :host     => '127.0.0.1',
                                             :port     => '15432',
-                                            :username => 'what',
-                                            :password => 'what'
+                                            :username => 'test',
+                                            :password => 'password'
                                            )
 
     ActiveRecord::Schema.drop_table(User.table_name, :drop_group => true) rescue nil
@@ -58,43 +58,43 @@ class AkibanSimpleTest < Test::Unit::TestCase
 
   def test_create_user_records
 
-    thedude = User.create do |u|
-      u.first_name = "Jeff"
-      u.last_name = "Lebowski"
-      u.email = "thedude@walters.com"
-      u.user_name = "thedude"
+    john = User.create do |u|
+      u.first_name = "John"
+      u.last_name = "Doe"
+      u.email = "john@doe.fake"
+      u.user_name = "johndoe"
       u.admin = true
     end
 
-    assert_not_nil thedude
-    assert_not_nil thedude.id
+    assert_not_nil john
+    assert_not_nil john.id
 
-    thedude.create_addr do |a|
-      a.street = "54 Bum Drive"
-      a.city = "LA"
-      a.zip = "90987"
+    john.create_addr do |a|
+      a.street = "123 Oak"
+      a.city = "Cambridge"
+      a.zip = "02114"
     end
 
-    assert_not_nil thedude.addr
+    assert_not_nil john.addr
 
-    myself = User.create do |u|
-      u.first_name = "Padraig"
-      u.last_name = "O'Sullivan"
-      u.email = "posulliv@akiban.com"
-      u.user_name = "posulliv"
+    jane = User.create do |u|
+      u.first_name = "Jane"
+      u.last_name = "Doe"
+      u.email = "jane@doe.fake"
+      u.user_name = "janedoe"
       u.admin = false
     end
 
-    assert_not_nil myself
-    assert_not_nil myself.id
+    assert_not_nil jane
+    assert_not_nil jane.id
 
-    myself.create_addr do |a|
-      a.street = "inman square"
-      a.city = "cambridge"
-      a.zip = "02141"
+    jane.create_addr do |a|
+      a.street = "456 Pine"
+      a.city = "Boston"
+      a.zip = "02118"
     end
 
-    assert_not_nil myself.addr
+    assert_not_nil jane.addr
 
     assert_equal 2, User.count
 
@@ -103,16 +103,16 @@ class AkibanSimpleTest < Test::Unit::TestCase
     mask = 0
     User.find do |entry|
       case entry.id 
-      when thedude.id
-        assert_equal 'Jeff', entry.first_name
-        assert_equal 'Lebowski', entry.last_name
-        assert_equal '54 Bum Drive', entry.addr.street
+      when john.id
+        assert_equal 'John', entry.first_name
+        assert_equal 'Doe', entry.last_name
+        assert_equal '123 Oak', entry.addr.street
         mask += 1
         nil
-      when myself.id
-        assert_equal 'Padraig', entry.first_name
-        assert_equal "O'Sullivan", entry.last_name
-        assert_equal 'inman square', entry.addr.street
+      when jane.id
+        assert_equal 'Jane', entry.first_name
+        assert_equal "Doe", entry.last_name
+        assert_equal '456 Pine', entry.addr.street
         mask += 10
         nil
       else
@@ -134,13 +134,13 @@ class AkibanSimpleTest < Test::Unit::TestCase
 
     User.find do |entry|
       case entry.id
-      when thedude.id
-        assert_equal 'JEFF', entry.first_name
-        assert_equal '54 BUM DRIVE', entry.addr.street
+      when john.id
+        assert_equal 'JOHN', entry.first_name
+        assert_equal '123 OAK', entry.addr.street
         nil
-      when myself.id
-        assert_equal 'PADRAIG', entry.first_name
-        assert_equal 'INMAN SQUARE', entry.addr.street
+      when jane.id
+        assert_equal 'JANE', entry.first_name
+        assert_equal '456 PINE', entry.addr.street
         nil
       else
         raise 'unknown entry.id'

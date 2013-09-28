@@ -1,12 +1,12 @@
-
-source :rubygems
+source 'https://rubygems.org'
 
 if ENV['RAILS_SOURCE']
   gemspec :path => ENV['RAILS_SOURCE']
 else
   version = ENV['RAILS_VERSION'] || begin
     require 'net/http'
-    spec = eval(File.read('activerecord-akiban-adapter.gemspec'))
+    require 'yaml'
+    spec = eval(File.read('activerecord-fdbsql-adapter.gemspec'))
     version = spec.dependencies.detect{ |d|d.name == 'activerecord' }.requirement.requirements.first.last.version
     major, minor, tiny = version.split('.')
     uri = URI.parse "http://rubygems.org/api/v1/versions/activerecord.yaml"
@@ -30,9 +30,9 @@ group :development do
   gem 'bcrypt-ruby', '~> 3.0.0'
   gem 'bench_press'
   gem 'm'
-  gem 'mocha', '0.9.8'
+  gem 'mocha'
   gem 'nokogiri'
-  gem 'rake', '~> 0.9.2'
+  gem 'rake', '~> 10.1.0'
   gem 'shoulda', '2.10.3'
 end
 
