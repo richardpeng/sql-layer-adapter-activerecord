@@ -1,13 +1,21 @@
 FDBSQL_GEMSPEC = Gem::Specification.new do |s|
-  s.platform     = Gem::Platform::RUBY
   s.name         = 'activerecord-fdbsql-adapter'
   s.version      = '0.1.0'
-  s.summary      = "ActiveRecord FoundationDB SQL Layer Adapter."
-  s.description  = "ActiveRecord FoundationDB SQL Layer Adapter."
+  s.date         = Time.new.strftime '%Y-%m-%d'
+  s.summary      = "ActiveRecord Adapter for the FoundationDB SQL Layer"
+  s.description  = <<-EOF
+ActiveRecord Adapter for the FoundationDB SQL Layer.
+
+Complete documentation of the FoundationDB SQL Layer can be found at:
+https://foundationdb.com/layers/sql/
+EOF
   s.authors      = ["FoundationDB"]
   s.email        = 'distribution@foundationdb.com'
-  s.homepage     = 'http://foundationdb.com'
   s.files        = Dir['LICENSE', 'README.md', 'VERSION', 'lib/**/*']
-  s.require_path = 'lib'
-  s.add_dependency('activerecord', '~> 3.2.0')
+  s.homepage     = 'https://github.com/FoundationDB/sql-layer-adapter-activerecord'
+  s.license      = 'MIT'
+  s.platform     = Gem::Platform::RUBY
+
+  s.add_dependency 'activerecord', '~> 3.2.0'
+  s.add_dependency 'pg'
 end
