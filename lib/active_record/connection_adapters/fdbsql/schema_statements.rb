@@ -79,7 +79,7 @@ module ActiveRecord
             SELECT   DISTINCT i.index_name, i.is_unique
             FROM     information_schema.indexes i
             WHERE    i.table_name = '#{table_name}'
-            AND      i.schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
+            AND      i.table_schema = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
             AND      i.index_type <> 'PRIMARY'
             AND      i.index_name <> 'id'
             ORDER BY i.index_name
@@ -93,7 +93,7 @@ module ActiveRecord
               SELECT ic.column_name, ic.is_ascending
               FROM   information_schema.index_columns ic
               WHERE  ic.index_table_name = '#{table_name}'
-                     AND ic.schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
+                     AND ic.index_schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
                      AND ic.index_name = '#{index_name}'
               sql
 
@@ -228,11 +228,11 @@ module ActiveRecord
         # values.
         def column_definitions(table_name)
           exec_query(<<-end_sql).rows
-            SELECT c.column_name, c.type, c.column_default, c.nullable
+            SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
             FROM information_schema.columns c
             WHERE c.table_name = '#{table_name}'
-            AND c.schema_name = CURRENT_SCHEMA
-            ORDER BY c.position
+            AND c.table_schema = CURRENT_SCHEMA
+            ORDER BY c.ordinal_position
           end_sql
         end
 
@@ -245,7 +245,7 @@ module ActiveRecord
             SELECT c.sequence_name
             FROM   information_schema.columns c
             WHERE  c.table_name = '#{table_name}'
-            AND c.schema_name = '#{schema_name}'
+            AND c.table_schema = '#{schema_name}'
             AND c.column_name = '#{col_name}'
           end_sql
           row && row.first

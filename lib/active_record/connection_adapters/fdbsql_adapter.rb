@@ -135,7 +135,7 @@ module ActiveRecord
           SELECT DISTINCT(ic.column_name)
           FROM information_schema.index_columns ic
           WHERE ic.index_table_name = '#{table_name}'
-          AND ic.schema_name = CURRENT_SCHEMA
+          AND ic.index_table_schema = CURRENT_SCHEMA
           AND ic.index_name = 'PRIMARY'
         sql
         row && row.first
