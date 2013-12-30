@@ -100,23 +100,6 @@ module ActiveRecord
           [sql, binds]
         end
 
-        def insert_fixture(fixture, table_name)
-          columns = Hash[columns(table_name).map { |c| [c.name, c] }]
-
-          # TODO: how does postgresql handle this?
-          # get the sequence name for the PK of this table
-          seq_name = get_seq_name(table_name, current_schema, 'id')
-          execute "SELECT NEXTVAL('#{current_schema}', '#{seq_name}')" if seq_name
-
-          key_list   = []
-          value_list = fixture.map do |name, value|
-            key_list << quote_column_name(name)
-            quote(value, columns[name])
-          end 
-
-          execute "INSERT INTO #{quote_table_name(table_name)} (#{key_list.join(', ')}) VALUES (#{value_list.join(', ')})", 'Fixture Insert'
-        end
-
       def begin_db_transaction
         execute "BEGIN"
       end

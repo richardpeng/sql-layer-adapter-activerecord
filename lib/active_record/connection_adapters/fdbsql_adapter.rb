@@ -150,6 +150,37 @@ module ActiveRecord
         row && row.first
       end
 
+
+      # ABSTRACT ADAPTER (OPTIONAL TEST METHODS) ======================
+
+      # Resets the sequence of a table's primary key to the maximum value.
+      def reset_pk_sequence!(table) #:nodoc:
+        pk_col, seq_schema, seq_name = pk_and_sequence_for(table)
+
+        if pk_col && !seq_schema
+          @logger.warn "#{table} has primary key #{pk_col} with no sequence" if @logger
+        end
+
+        if pk_col && seq_schema
+          quoted_col = quote_column_name(pk_col)
+          seq_from_where = "FROM information_schema.sequences WHERE sequence_schema='#{seq_schema}' AND sequence_name='#{seq_name}'"
+          result = query(<<-end_sql, 'FDBSQL')
+            SELECT COALESCE(MAX(#{quoted_col} + (SELECT increment #{seq_from_where})), (SELECT minimum_value #{seq_from_where})) FROM #{quote_table_name(table)}
+          end_sql
+
+          if result.length == 1
+            @logger.debug "Resetting sequence #{seq_schema}.#{seq_name} to #{result}" if @logger
+            # The COMMIT .. BEGIN can go away when 1) transactional DDL is available 2) There is a better restart/set function
+            query(<<-end_sql, 'FDBSQL')
+              COMMIT; CALL sys.alter_seq_restart('#{seq_schema}', '#{seq_name}', #{result[0][0]}); BEGIN;
+            end_sql
+          else
+            @logger.warn "Unable to determin max value for #{table}.#{pk_col}" if @logger
+          end
+        end
+      end#
+
+
       protected
 
       # FOUNDATIONDB SQL SPECIFIC =========================================
@@ -169,6 +200,30 @@ module ActiveRecord
         @connection = PGconn.connect(@connection_parameters)
         # swallow warnings for now
         @connection.set_notice_receiver { |proc| }
+      end
+
+
+      private
+
+      # Returns a table's primary key and associated sequence or nil if none
+      def pk_and_sequence_for(table) #:nodoc:
+        result = query(<<-end_sql, 'FDBSQL')
+          SELECT kc.column_name,
+                 c.sequence_schema,
+                 c.sequence_name
+          FROM information_schema.table_constraints tc
+          INNER JOIN information_schema.key_column_usage kc
+            ON  tc.table_name=kc.table_name
+            AND tc.constraint_name=kc.constraint_name
+          INNER JOIN information_schema.columns c
+            ON  kc.table_name=c.table_name
+            AND kc.column_name=c.column_name
+          WHERE tc.table_name='#{table}'
+            AND tc.constraint_type='PRIMARY KEY'
+        end_sql
+        return (result.length == 1) ? result[0] : nil
+      rescue
+        nil
       end
 
     end # FDBSQLAdapter
