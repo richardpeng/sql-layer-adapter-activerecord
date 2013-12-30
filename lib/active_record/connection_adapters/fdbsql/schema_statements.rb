@@ -144,8 +144,12 @@ module ActiveRecord
         end
 
         def remove_column(table_name, *column_names)
-          column_names.flatten.each do |column_name|
-            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{quote_column_name(column_name)}"
+          if column_names.flatten!
+            ActiveSupport::Deprecation.warn 'Passing array to remove_columns is deprecated, use multiple arguments', caller
+          end
+          columns_for_remove(table_name, *column_names).each do |column_name|
+            # column_name already quoted
+            execute "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{column_name}"
           end
         end
 
