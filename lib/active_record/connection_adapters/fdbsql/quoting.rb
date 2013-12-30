@@ -89,7 +89,9 @@ module ActiveRecord
         # if the value is a Time responding to usec.
         def quoted_date(value) #:nodoc:
           if value.acts_like?(:time) && value.respond_to?(:usec)
-            "#{super}.#{sprintf("%06d", value.usec)}"
+            # TODO: 1.9.2 doesn't support fractional TIME
+            #"#{super}.#{sprintf("%06d", value.usec)}"
+            "#{super}"
           else
             super
           end
