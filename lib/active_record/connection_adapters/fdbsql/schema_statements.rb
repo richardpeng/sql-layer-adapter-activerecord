@@ -14,6 +14,7 @@ module ActiveRecord
           float:       { name: "float" },
           decimal:     { name: "decimal" },
           datetime:    { name: "datetime" },
+          # NB: As of 1.9.2, TIMESTAMP is a DATETIME alias
           timestamp:   { name: "timestamp" },
           time:        { name: "time" },
           date:        { name: "date" },
@@ -196,9 +197,7 @@ module ActiveRecord
             end
           when 'decimal'
             # FoundationDB SQL supports precision up to 31
-            if precision > 32
-              precision = 31
-            end
+            precision = 31 if precision.to_i > 31
             super
           else
             super
