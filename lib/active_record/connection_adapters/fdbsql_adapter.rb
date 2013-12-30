@@ -185,12 +185,16 @@ module ActiveRecord
 
       # FOUNDATIONDB SQL SPECIFIC =========================================
 
-      UNIQUE_VIOLATION = "23501"
+      DUPLICATE_KEY_CODE = "23501"
+      FK_REFERENCING_VIOLATION_CODE = "23503"
+      FK_REFERENCED_VIOLATION_CODE = "23504"
 
       def translate_exception(exception, message)
         case exception.result.try(:error_field, PGresult::PG_DIAG_SQLSTATE)
-        when UNIQUE_VIOLATION
+        when DUPLICATE_KEY_CODE
           RecordNotUnique.new(message, exception)
+        when FK_REFERENCING_VIOLATION_CODE, FK_REFERENCED_VIOLATION_CODE
+          InvalidForeignKey.new(message, exception)
         else
           super
         end
