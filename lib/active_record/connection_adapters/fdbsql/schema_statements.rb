@@ -42,7 +42,7 @@ module ActiveRecord
         def columns(table_name, name = nil)
           return [] if table_name.blank?
           column_definitions(table_name).map do |column_name, type, default, nullable|
-            FDBSQLColumn.new(column_name, default, type, nullable == 'YES')
+            FDBSQLColumn.new(column_name, default, type, nullable)
           end
         end
 
@@ -92,11 +92,10 @@ module ActiveRecord
             idx_columns = Hash[query(<<-sql, 'SCHEMA')]
               SELECT ic.column_name, ic.is_ascending
               FROM   information_schema.index_columns ic
-              WHERE  ic.index_table_name = '#{table_name}'
-                     AND ic.index_schema_name = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
-                     AND ic.index_name = '#{index_name}'
+              WHERE  ic.index_table_schema = #{name ? "'#{name}'" : "CURRENT_SCHEMA"}
+                 AND ic.index_table_name = '#{table_name}'
+                 AND ic.index_name = '#{index_name}'
               sql
-
             unless idx_columns.empty?
               # TODO: use the ASC/DESC information for each index column
               indexes << IndexDefinition.new(table_name, index_name, unique, idx_columns.keys)
@@ -231,11 +230,11 @@ module ActiveRecord
         # values.
         def column_definitions(table_name)
           exec_query(<<-end_sql).rows
-            SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
-            FROM information_schema.columns c
-            WHERE c.table_name = '#{table_name}'
-            AND c.table_schema = CURRENT_SCHEMA
-            ORDER BY c.ordinal_position
+            SELECT column_name, data_type, column_default, is_nullable = 'YES'
+            FROM information_schema.columns
+            WHERE table_name = '#{table_name}'
+            AND table_schema = CURRENT_SCHEMA
+            ORDER BY ordinal_position
           end_sql
         end
 
