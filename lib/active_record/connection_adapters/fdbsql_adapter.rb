@@ -102,6 +102,15 @@ module ActiveRecord
         true
       end
 
+      def supports_ddl_transactions?
+        false
+      end
+
+      def index_name_length
+        # pg driver has a hard limit of NAMEDATALEN-1
+        63
+      end
+
       # QUOTING ==================================================
 
       # REFERENTIAL INTEGRITY ====================================
