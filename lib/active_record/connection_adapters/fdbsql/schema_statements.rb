@@ -150,6 +150,9 @@ module ActiveRecord
         end
 
         def rename_column(table_name, column_name, new_column_name)
+          unless columns(table_name).detect{ |c| c.name == column_name.to_s }
+            raise ActiveRecord::ActiveRecordError, "No such column #{table_name}.#{column_name}"
+          end
           clear_cache!
           execute "ALTER TABLE #{quote_table_name(table_name)} RENAME COLUMN #{quote_column_name(column_name)} TO #{quote_column_name(new_column_name)}"
         end
