@@ -17,6 +17,7 @@ module ActiveRecord
 
           case value
           when Float
+            # TODO: What is this trying to do?
             if value.infinite? && column.type == :datetime
               "'#{value.to_s.downcase}'"
             elsif value.infinite? || value.nan?
@@ -27,11 +28,12 @@ module ActiveRecord
           when Numeric
             super
           when String
-            case column.sql_type
-            when 'blob' then
-              quote_string(escape_binary(value))
+            if column.type == :binary
+              # escape_binary() generates an octal, backslash escaped string.
+              # Encapsulate in E'' so it is interpreted correctly.
+              "E'#{escape_binary(value)}'"
             else
-              super
+              "'#{quote_string(value)}'"
             end
           else
             super
@@ -40,7 +42,8 @@ module ActiveRecord
 
         # Quotes strings for use in SQL input.
         def quote_string(s)
-          @connection.escape_string(s)
+          # cannot use ruby-pg escape_string() as our backslash doesn't need escaped
+          s.gsub("'", "''")
         end
 
         # Quotes column names for use in SQL queries.
