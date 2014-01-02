@@ -110,15 +110,9 @@ module ActiveRecord
           # (Executes an INSERT and)
           # Returns the last auto-generated ID from the affected table.
           def insert_sql(sql, name = nil, pk = nil, id_value = nil, sequence_name = nil)
-            unless pk
-              # TODO: find primary key for this table
-              # Extract the table from the insert sql. Yuck.
-            end
-            if pk
-              select_value("#{sql} RETURNING #{quote_column_name(pk)}")
-            else
-              super
-            end
+            return super if id_value
+            pk = pk_from_insert_sql(sql) unless pk
+            select_value("#{sql} RETURNING #{quote_column_name(pk)}")
           end
           alias :create :insert_sql
 
@@ -130,10 +124,7 @@ module ActiveRecord
           alias :update_sql :delete_sql
 
           def sql_for_insert(sql, pk, id_value, sequence_name, binds)
-            unless pk
-              # TODO: find primary key for this table
-              # Extract the table from the insert sql. Yuck.
-            end
+            pk = pk_from_insert_sql(sql) unless pk
             sql = "#{sql} RETURNING #{quote_column_name(pk)}" if pk
             [sql, binds]
           end
@@ -180,6 +171,12 @@ module ActiveRecord
             fields = res.fields
             res.clear
             return fields, results
+          end
+
+          # Super gross but insert APIs require returning the generated ID
+          def pk_from_insert_sql(sql)
+            sql[/into\s+([^\(]*).*values\s*\(/i]
+            primary_key($1.strip) if $1
           end
 
       end
