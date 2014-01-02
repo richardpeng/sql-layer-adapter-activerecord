@@ -14,26 +14,31 @@ module ActiveRecord
         # Quotes data types for SQL input.
         def quote(value, column = nil)
           return super unless column
-
           case value
-          when Float
-            # TODO: What is this trying to do?
-            if value.infinite? && column.type == :datetime
-              "'#{value.to_s.downcase}'"
-            elsif value.infinite? || value.nan?
-              "'#{value.to_s}'"
-            else
-              super
-            end
-          when Numeric
-            super
           when String
             if column.type == :binary
               # escape_binary() generates an octal, backslash escaped string.
               # Encapsulate in E'' so it is interpreted correctly.
               "E'#{escape_binary(value)}'"
             else
-              "'#{quote_string(value)}'"
+              super
+            end
+          else
+            super
+          end
+        end
+
+        # Cast a +value+ to a type that the database understands.
+        # Used in the prepared statement path
+        def type_cast(value, column)
+          return super unless column
+          case value
+          when String
+            if :binary == column.type
+              # Send binary data as binary format
+              { :value => value, :format => 1 }
+            else
+              super
             end
           else
             super

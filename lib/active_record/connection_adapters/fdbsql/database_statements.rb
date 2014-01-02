@@ -26,7 +26,7 @@ module ActiveRecord
           log(sql, name, binds) do
             result = binds.empty? ? exec_no_cache(sql, binds) :
                                     exec_cache(sql, binds)
-            ret = ActiveRecord::Result.new(result.fields, result.values)
+            ret = ActiveRecord::Result.new(result.fields, result_as_array(result))
             result.clear
             ret
           end
@@ -141,6 +141,9 @@ module ActiveRecord
 
         private
 
+          BINARY_COLUMN_TYPE = 17
+
+
           def exec_no_cache(sql, binds)
             @connection.async_exec(sql)
           end
@@ -159,11 +162,16 @@ module ActiveRecord
           end
 
           def result_as_array(res)
-            ftypes = Array.new(res.nfields) do |i|
-              [i, res.ftype(i)]
-            end
-            # TODO: Look for BINARY columns needing un-escaped
-            res.values
+            # Any binary columns need un-escaped
+            binaries = []
+            res.nfields.times { |i| binaries << i if res.ftype(i) == BINARY_COLUMN_TYPE }
+            rows = res.values
+            return rows unless binaries.any?
+            rows.each { |row|
+              binaries.each { |i|
+                row[i] = unescape_binary(row[i])
+              }
+            }
           end
 
           def select_raw(sql, name = nil)
