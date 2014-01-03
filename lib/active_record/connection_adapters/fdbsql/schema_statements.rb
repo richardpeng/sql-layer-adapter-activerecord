@@ -171,14 +171,14 @@ module ActiveRecord
         end
 
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
-          case type.to_s
-          when 'integer'
+          case type
+          when :integer
             case limit
-              when nil, 1..4; 'int'
+              when nil, 1..4; type.to_s
               when 5..8; 'bigint'
               else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
             end
-          when 'decimal'
+          when :decimal
             # NB: Maximum supported as of 1.9.2
             precision = 31 if precision.to_i > 31
             super
