@@ -223,8 +223,17 @@ module ActiveRecord
           }
         end
 
-        # Change a columns NULL-ability
+        # Change a columns NULL-ability and, optionally, current value if NULL.
+        # NB: default is only used if changing to NOT NULL. It *does not* become the column DEFAULT
         def change_column_null(table_name, column_name, null, default = nil)
+          unless null || default.nil?
+            execute(
+              "UPDATE #{quote_table_name(table_name)} "+
+              "SET #{quote_column_name(column_name)}=#{quote(default)} "+
+              "WHERE ISNULL(#{quote_column_name(column_name)})",
+              SCHEMA_LOG_NAME
+            )
+          end
           execute(
             "ALTER TABLE #{quote_table_name(table_name)} "+
             "ALTER COLUMN #{quote_column_name(column_name)} "+
