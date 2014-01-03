@@ -1,14 +1,18 @@
 require 'active_record'
 require 'active_record/base'
 require 'active_record/connection_adapters/abstract_adapter'
+require 'active_record/connection_adapters/statement_pool'
+require 'arel/visitors/bind_visitor'
+
 require 'active_record/connection_adapters/fdbsql/column'
 require 'active_record/connection_adapters/fdbsql/database_limits'
 require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
 require 'active_record/connection_adapters/fdbsql/schema_statements'
-require 'arel/visitors/bind_visitor'
+require 'active_record/connection_adapters/fdbsql/statement_pool'
 
 # FoundationDB SQL Layer currently uses the Postgres protocol
+gem 'pg', '~> 0.11'
 require 'pg'
 
 module ActiveRecord
@@ -76,7 +80,7 @@ module ActiveRecord
         @connection_hash = connection_hash
         @config = config
         connect
-        # TODO: StatementPool.new
+        @statements = FdbSql::StatementPool.new(@connection, config.fetch(:statement_limit) { 1000 })
       end
 
 
@@ -167,7 +171,7 @@ module ActiveRecord
       end
 
       def clear_cache!
-        # TODO
+        @statements.clear
       end
 
 
@@ -184,19 +188,23 @@ module ActiveRecord
           end
         end
 
+        def stmt_cache_prefix
+          @config[:database]
+        end
 
       private
 
         ADAPTER_NAME = 'FDBSQL'.freeze
-        DUPLICATE_KEY_CODE = "23501"
-        FK_REFERENCING_VIOLATION_CODE = "23503"
-        FK_REFERENCED_VIOLATION_CODE = "23504"
+        DUPLICATE_KEY_CODE = '23501'
+        FK_REFERENCING_VIOLATION_CODE = '23503'
+        FK_REFERENCED_VIOLATION_CODE = '23504'
 
 
         def connect
           @connection = PG::Connection.new(@connection_hash)
           # Swallow warnings
           @connection.set_notice_receiver { |proc| }
+          # TODO: Check FDB SQL version
         end
 
         def configure_connection

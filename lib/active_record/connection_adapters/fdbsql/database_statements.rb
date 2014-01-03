@@ -8,7 +8,7 @@ module ActiveRecord
 
         # Returns an array of arrays containing the field values
         # Order is the same as that returned by +columns+
-        def select_rows(sql, name = nil)
+        def select_rows(sql, name = 'SQL')
           select_raw(sql, name).last
         end
 
@@ -24,8 +24,7 @@ module ActiveRecord
         # the executed +sql+ statement.
         def exec_query(sql, name = 'SQL', binds = [])
           log(sql, name, binds) do
-            result = binds.empty? ? exec_no_cache(sql, binds) :
-                                    exec_cache(sql, binds)
+            result = binds.any? ? exec_cache(sql, binds) : exec_no_cache(sql)
             ret = ActiveRecord::Result.new(result.fields, result_as_array(result))
             result.clear
             ret
@@ -37,8 +36,7 @@ module ActiveRecord
         # the executed +sql+ statement.
         def exec_delete(sql, name = 'SQL', binds = [])
           log(sql, name, binds) do
-            result = binds.empty? ? exec_no_cache(sql, binds) :
-                                    exec_cache(sql, binds)
+            result = binds.any? ? exec_cache(sql, binds) : exec_no_cache(sql)
             affected = result.cmd_tuples
             result.clear
             affected
@@ -60,24 +58,23 @@ module ActiveRecord
         # Returns +true+ when the connection adapter supports prepared statement
         # caching, otherwise returns +false+
         def supports_statement_cache?
-          # TODO
-          false
+          true
         end
 
         # Begins the transaction (and turns off auto-committing).
         def begin_db_transaction
-          execute "BEGIN"
+          execute("BEGIN")
         end
 
         # Commits the transaction (and turns on auto-committing).
         def commit_db_transaction
-          execute "COMMIT"
+          execute("COMMIT")
         end
 
         # Rolls back the transaction (and turns on auto-committing). Must be
         # done if the transaction block raises an exception or returns false.
         def rollback_db_transaction
-          execute "ROLLBACK"
+          execute("ROLLBACK")
         end
 
         # Implemented in schema_statements
@@ -133,23 +130,36 @@ module ActiveRecord
         private
 
           BINARY_COLUMN_TYPE = 17
+          STALE_STATEMENT_CODE = '0A50A'
 
 
-          def exec_no_cache(sql, binds)
+          def exec_no_cache(sql)
             @connection.async_exec(sql)
           end
 
           def exec_cache(sql, binds)
-            # TODO: caching & proper stmt key generation
-            stmt_key = (0...8).map{65.+(rand(26)).chr}.join
-            @connection.prepare(stmt_key, sql)
-            # clear the queue
-            @connection.get_last_result
-            @connection.send_query_prepared(stmt_key, binds.map { |col, val|
-              type_cast(val, col)
-            })
-            @connection.block
-            @connection.get_last_result
+            begin
+              stmt_key = prepare_stmt(sql)
+              # Clear unconsumed
+              @connection.get_last_result()
+              @connection.send_query_prepared(stmt_key, binds.map { |col, val|
+                type_cast(val, col)
+              })
+              @connection.block()
+              @connection.get_last_result()
+            rescue PGError => e
+              begin
+                code = e.result.result_error_field(PGresult::PG_DIAG_SQLSTATE)
+              rescue
+                raise e
+              end
+              if code == STALE_STATEMENT_CODE
+                @statements.delete(sql_cache_key(sql))
+                retry
+              else
+                raise e
+              end
+            end
           end
 
           def result_as_array(res)
@@ -177,6 +187,20 @@ module ActiveRecord
           def pk_from_insert_sql(sql)
             sql[/into\s+([^\(]*).*values\s*\(/i]
             primary_key($1.strip) if $1
+          end
+
+          def sql_cache_key(sql)
+            "#{stmt_cache_prefix}-#{sql}"
+          end
+
+          def prepare_stmt(sql)
+            sql_key = sql_cache_key(sql)
+            unless @statements.key? sql_key
+              nkey = @statements.next_key
+              @connection.prepare nkey, sql
+              @statements[sql_key] = nkey
+            end
+            @statements[sql_key]
           end
 
       end
