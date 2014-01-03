@@ -17,9 +17,8 @@ module ActiveRecord
           case value
           when String
             if column.type == :binary
-              # escape_binary() generates an octal, backslash escaped string.
-              # Encapsulate in E'' so it is interpreted correctly.
-              "E'#{escape_binary(value)}'"
+              hex_str = value ? value.unpack('H*')[0] : nil
+              "x'#{hex_str}'"
             else
               super
             end
@@ -29,7 +28,7 @@ module ActiveRecord
         end
 
         # Cast a +value+ to a type that the database understands.
-        # Used in the prepared statement path
+        # Used in the prepared statement path.
         def type_cast(value, column)
           return super unless column
           case value
