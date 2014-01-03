@@ -55,7 +55,7 @@ module ActiveRecord
           select_rows(
             "SELECT column_name, "+
             "       column_default, "+
-            "       REPLACE(COLUMN_TYPE_STRING(table_schema, table_name, column_name), ' ', ''), "+
+            "       COLUMN_TYPE_STRING(table_schema, table_name, column_name), "+
             "       is_nullable "+
             "FROM information_schema.columns "+
             "WHERE table_schema = CURRENT_SCHEMA "+
@@ -63,7 +63,9 @@ module ActiveRecord
             "ORDER BY ordinal_position",
             name || SCHEMA_LOG_NAME
           ).map { |row|
-            FdbSqlColumn.new(row[0], row[1], row[2], row[3] == 'YES')
+            # Base Column depends on lower and no space (e.g. DECIMAL(10, 0) => decimal(10,0))
+            type_str = row[2].gsub(' ', '').downcase
+            FdbSql::Column.new(row[0], row[1], type_str, row[3] == 'YES')
           }
         end
 
@@ -173,13 +175,16 @@ module ActiveRecord
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type
           when :integer
+            # NB: Changes here need reflected in FdbSql::Column.extract_limit()
             case limit
-              when nil, 1..4; type.to_s
-              when 5..8; 'bigint'
+              when nil, 1..4
+                type.to_s
+              when 5..8
+                'bigint'
               else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
             end
           when :decimal
-            # NB: Maximum supported as of 1.9.2
+            # Maximum supported as of 1.9.2
             precision = 31 if precision.to_i > 31
             super
           else

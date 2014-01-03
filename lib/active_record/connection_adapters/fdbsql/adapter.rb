@@ -1,6 +1,7 @@
 require 'active_record'
 require 'active_record/base'
 require 'active_record/connection_adapters/abstract_adapter'
+require 'active_record/connection_adapters/fdbsql/column'
 require 'active_record/connection_adapters/fdbsql/database_limits'
 require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
@@ -42,10 +43,6 @@ module ActiveRecord
 
 
   module ConnectionAdapters
-
-    class FdbSqlColumn < Column
-    end
-
 
     class FdbSqlAdapter < AbstractAdapter
 
