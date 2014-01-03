@@ -1,0 +1,69 @@
+diff --git a/activerecord/test/cases/adapter_test.rb b/activerecord/test/cases/adapter_test.rb
+index 56c3596..06ade90 100644
+--- a/activerecord/test/cases/adapter_test.rb
++++ b/activerecord/test/cases/adapter_test.rb
+@@ -144,6 +144,7 @@ module ActiveRecord
+     end
+ 
+     def test_disable_referential_integrity
++      return skip "FDBSQL: Disabling refential integrity is not supported" if current_adapter?(:FdbSqlAdapter)
+       assert_nothing_raised do
+         @connection.disable_referential_integrity do
+           # Oracle adapter uses prefetched primary key values from sequence and passes them to connection adapter insert method
+diff --git a/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb b/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
+index cad4cc9..05df5b3 100644
+--- a/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
++++ b/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
+@@ -820,6 +820,7 @@ class HasAndBelongsToManyAssociationsTest < ActiveRecord::TestCase
+ 
+   unless current_adapter?(:PostgreSQLAdapter)
+     def test_count_with_finder_sql
++      return skip "FDBSQL: Columns used in aggregates must appear in GROUP BY" if current_adapter?(:FdbSqlAdapter)
+       assert_equal 3, projects(:active_record).developers_with_finder_sql.count
+       assert_equal 3, projects(:active_record).developers_with_multiline_finder_sql.count
+     end
+diff --git a/activerecord/test/cases/base_test.rb b/activerecord/test/cases/base_test.rb
+index 67b5d17..f22a74b 100644
+--- a/activerecord/test/cases/base_test.rb
++++ b/activerecord/test/cases/base_test.rb
+@@ -100,6 +100,7 @@ class BasicsTest < ActiveRecord::TestCase
+       'Mysql2Adapter'     => '`',
+       'PostgreSQLAdapter' => '"',
+       'OracleAdapter'     => '"',
++      'FdbSqlAdapter'     => '"',
+     }.fetch(classname) {
+       raise "need a bad char for #{classname}"
+     }
+@@ -161,6 +162,7 @@ class BasicsTest < ActiveRecord::TestCase
+ 
+   unless current_adapter?(:MysqlAdapter) || current_adapter?(:Mysql2Adapter)
+     def test_limit_should_allow_sql_literal
++      return skip "FDBSQL: LIMIT does not support expressions" if current_adapter?(:FdbSqlAdapter)
+       assert_equal 1, Topic.limit(Arel.sql('2-1')).all.length
+     end
+   end
+diff --git a/activerecord/test/cases/migration_test.rb b/activerecord/test/cases/migration_test.rb
+index 7f0d921..04ca252 100644
+--- a/activerecord/test/cases/migration_test.rb
++++ b/activerecord/test/cases/migration_test.rb
+@@ -502,7 +502,7 @@ if ActiveRecord::Base.connection.supports_migrations?
+         Person.connection.execute "insert into people (id, wealth, created_at, updated_at) values (people_seq.nextval, 12345678901234567890.0123456789, sysdate, sysdate)"
+       elsif current_adapter?(:OpenBaseAdapter) || (current_adapter?(:MysqlAdapter) && Mysql.client_version < 50003) #before mysql 5.0.3 decimals stored as strings
+         Person.connection.execute "insert into people (wealth, created_at, updated_at) values ('12345678901234567890.0123456789', 0, 0)"
+-      elsif current_adapter?(:PostgreSQLAdapter)
++      elsif current_adapter?(:PostgreSQLAdapter) || current_adapter?(:FdbSqlAdapter)  # FDBSQL: Zero not allowed in DATETIME
+         Person.connection.execute "insert into people (wealth, created_at, updated_at) values (12345678901234567890.0123456789, now(), now())"
+       else
+         Person.connection.execute "insert into people (wealth, created_at, updated_at) values (12345678901234567890.0123456789, 0, 0)"
+diff --git a/activerecord/test/cases/persistence_test.rb b/activerecord/test/cases/persistence_test.rb
+index db1ba35..32f246d 100644
+--- a/activerecord/test/cases/persistence_test.rb
++++ b/activerecord/test/cases/persistence_test.rb
+@@ -31,6 +31,7 @@ class PersistencesTest < ActiveRecord::TestCase
+     end
+ 
+     def test_update_all_doesnt_ignore_order
++      return skip "FDBSQL: Test assumes non-standard compatible constraint failure" if current_adapter?(:FdbSqlAdapter)
+       assert_equal authors(:david).id + 1, authors(:mary).id # make sure there is going to be a duplicate PK error
+       test_update_with_order_succeeds = lambda do |order|
+         begin
