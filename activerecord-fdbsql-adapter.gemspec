@@ -16,6 +16,7 @@ EOF
   s.license      = 'MIT'
   s.platform     = Gem::Platform::RUBY
 
-  s.add_dependency 'activerecord', '~> 3.2.0'
+  # Tested with 3.2 through 4.1
+  s.add_dependency 'activerecord', '>= 3.2', '<= 4.1'
   s.add_dependency 'pg'
 end

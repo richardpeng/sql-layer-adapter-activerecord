@@ -23,6 +23,10 @@ def test_files(with_unit, with_ar)
     adapter_cases = Dir.glob("#{AR_PATH}/test/cases/adapters/**/*_test.rb")
     files += (ar_cases - adapter_cases).sort
   end
+  match_str = ENV['TESTMATCH']
+  if match_str
+    files.keep_if { |f| f.match(match_str) }
+  end
   files
 end
 
@@ -51,6 +55,12 @@ namespace :test do
   test_task('unit', test_files(true, false))
   test_task('activerecord', test_files(false, true))
   test_task('both', test_files(true, true))
+
+  task :print_test_files do
+    for f in test_files(false, true) do
+      puts f
+    end
+  end
 end
 
 task :build_databases do

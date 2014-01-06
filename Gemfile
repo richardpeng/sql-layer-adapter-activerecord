@@ -3,7 +3,9 @@ source 'https://rubygems.org'
 if ENV['RAILS_SOURCE']
   gemspec :path => ENV['RAILS_SOURCE']
 else
-  version = ENV['RAILS_VERSION'] || begin
+  version = ENV['RAILS_VERSION']
+  # If not present, use oldest supported
+  if !version
     require 'net/http'
     require 'yaml'
     spec = eval(File.read('activerecord-fdbsql-adapter.gemspec'))
@@ -16,10 +18,6 @@ else
     end.first['number']
   end
   gem 'rails', :git => "git://github.com/rails/rails.git", :tag => "v#{version}"
-end
-
-if ENV['AREL']
-  gem 'arel', :path => ENV['AREL']
 end
 
 group :pg do
