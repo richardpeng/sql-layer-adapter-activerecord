@@ -23,14 +23,14 @@ index cad4cc9..05df5b3 100644
        assert_equal 3, projects(:active_record).developers_with_multiline_finder_sql.count
      end
 diff --git a/activerecord/test/cases/associations/has_many_associations_test.rb b/activerecord/test/cases/associations/has_many_associations_test.rb
-index 53cce33..6338c74 100644
+index 53cce33..ee586fc 100644
 --- a/activerecord/test/cases/associations/has_many_associations_test.rb
 +++ b/activerecord/test/cases/associations/has_many_associations_test.rb
 @@ -927,6 +927,8 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
    end
  
    def test_transaction_when_deleting_persisted
-+    return skip "Test requires SAVEPOINT support" if !Client.connection.supports_savepoints?
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
 +
      good = Client.new(:name => "Good")
      bad  = Client.new(:name => "Bad", :raise_on_destroy => true)
@@ -39,11 +39,24 @@ index 53cce33..6338c74 100644
    end
  
    def test_transactions_when_replacing_on_persisted
-+    return skip "Test requires SAVEPOINT support" if !Client.connection.supports_savepoints?
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
 +
      good = Client.new(:name => "Good")
      bad  = Client.new(:name => "Bad", :raise_on_save => true)
  
+diff --git a/activerecord/test/cases/autosave_association_test.rb b/activerecord/test/cases/autosave_association_test.rb
+index cb68f96..91fa5b0 100644
+--- a/activerecord/test/cases/autosave_association_test.rb
++++ b/activerecord/test/cases/autosave_association_test.rb
+@@ -599,6 +599,8 @@ class TestDestroyAsPartOfAutosaveAssociation < ActiveRecord::TestCase
+   self.use_transactional_fixtures = false
+ 
+   def setup
++    # Ensure clean state for adapters without savepoints
++    Bird.delete_all unless supports_savepoints?
+     @pirate = Pirate.create(:catchphrase => "Don' botharrr talkin' like one, savvy?")
+     @ship = @pirate.create_ship(:name => 'Nights Dirty Lightning')
+   end
 diff --git a/activerecord/test/cases/base_test.rb b/activerecord/test/cases/base_test.rb
 index 67b5d17..f22a74b 100644
 --- a/activerecord/test/cases/base_test.rb
