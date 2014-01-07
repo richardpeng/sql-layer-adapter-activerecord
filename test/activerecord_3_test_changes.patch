@@ -67,3 +67,17 @@ index db1ba35..32f246d 100644
        assert_equal authors(:david).id + 1, authors(:mary).id # make sure there is going to be a duplicate PK error
        test_update_with_order_succeeds = lambda do |order|
          begin
+diff --git a/activerecord/test/cases/schema_dumper_test.rb b/activerecord/test/cases/schema_dumper_test.rb
+index 629e5e0..7ab0fec 100644
+--- a/activerecord/test/cases/schema_dumper_test.rb
++++ b/activerecord/test/cases/schema_dumper_test.rb
+@@ -231,6 +231,9 @@ class SchemaDumperTest < ActiveRecord::TestCase
+     # Oracle supports precision up to 38 and it identifies decimals with scale 0 as integers
+     if current_adapter?(:OracleAdapter)
+       assert_match %r{t.integer\s+"atoms_in_universe",\s+:precision => 38,\s+:scale => 0}, output
++    # FDBSQL: Supports precision up to 31
++    elsif current_adapter?(:FdbSqlAdapter)
++      assert_match %r{t.decimal\s+"atoms_in_universe",\s+:precision => 31,\s+:scale => 0}, output
+     else
+       assert_match %r{t.decimal\s+"atoms_in_universe",\s+:precision => 55,\s+:scale => 0}, output
+     end
