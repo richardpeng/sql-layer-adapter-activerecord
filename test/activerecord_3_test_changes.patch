@@ -22,6 +22,28 @@ index cad4cc9..05df5b3 100644
        assert_equal 3, projects(:active_record).developers_with_finder_sql.count
        assert_equal 3, projects(:active_record).developers_with_multiline_finder_sql.count
      end
+diff --git a/activerecord/test/cases/associations/has_many_associations_test.rb b/activerecord/test/cases/associations/has_many_associations_test.rb
+index 53cce33..6338c74 100644
+--- a/activerecord/test/cases/associations/has_many_associations_test.rb
++++ b/activerecord/test/cases/associations/has_many_associations_test.rb
+@@ -927,6 +927,8 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_transaction_when_deleting_persisted
++    return skip "Test requires SAVEPOINT support" if !Client.connection.supports_savepoints?
++
+     good = Client.new(:name => "Good")
+     bad  = Client.new(:name => "Bad", :raise_on_destroy => true)
+ 
+@@ -1291,6 +1293,8 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_transactions_when_replacing_on_persisted
++    return skip "Test requires SAVEPOINT support" if !Client.connection.supports_savepoints?
++
+     good = Client.new(:name => "Good")
+     bad  = Client.new(:name => "Bad", :raise_on_save => true)
+ 
 diff --git a/activerecord/test/cases/base_test.rb b/activerecord/test/cases/base_test.rb
 index 67b5d17..f22a74b 100644
 --- a/activerecord/test/cases/base_test.rb
