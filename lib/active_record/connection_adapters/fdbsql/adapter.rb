@@ -64,10 +64,10 @@ module ActiveRecord
       end
 
 
-      include FdbSql::DatabaseLimits
-      include FdbSql::DatabaseStatements
-      include FdbSql::Quoting
-      include FdbSql::SchemaStatements
+      include DatabaseLimits
+      include DatabaseStatements
+      include Quoting
+      include SchemaStatements
 
 
       def initialize(connection, logger, connection_hash, config)
@@ -80,7 +80,7 @@ module ActiveRecord
         @connection_hash = connection_hash
         @config = config
         connect
-        @statements = FdbSql::StatementPool.new(@connection, config.fetch(:statement_limit) { 1000 })
+        @statements = FdbSqlStatementPool.new(@connection, config.fetch(:statement_limit) { 1000 })
       end
 
 
@@ -190,6 +190,8 @@ module ActiveRecord
           else
             super
           end
+        rescue
+          super
         end
 
         def stmt_cache_prefix

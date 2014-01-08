@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module FdbSql
+    class FdbSqlAdapter < AbstractAdapter
 
       module SchemaStatements
 
@@ -65,7 +65,7 @@ module ActiveRecord
           ).map { |row|
             # Base Column depends on lower and no space (e.g. DECIMAL(10, 0) => decimal(10,0))
             type_str = row[2].gsub(' ', '').downcase
-            FdbSql::Column.new(row[0], row[1], type_str, row[3] == 'YES')
+            FdbSqlColumn.new(row[0], row[1], type_str, row[3] == 'YES')
           }
         end
 
@@ -174,7 +174,7 @@ module ActiveRecord
         def type_to_sql(type, limit = nil, precision = nil, scale = nil)
           case type
           when :integer
-            # NB: Changes here need reflected in FdbSql::Column.extract_limit()
+            # NB: Changes here need reflected in FdbSqlColumn.extract_limit()
             case limit
               when nil, 1..4
                 type.to_s

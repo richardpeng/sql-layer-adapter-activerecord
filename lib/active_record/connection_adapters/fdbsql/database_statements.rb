@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module FdbSql
+    class FdbSqlAdapter < AbstractAdapter
 
       module DatabaseStatements
 

@@ -2,9 +2,9 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module FdbSql
+    class FdbSqlAdapter < AbstractAdapter
 
-      class StatementPool < ConnectionAdapters::StatementPool
+      class FdbSqlStatementPool < StatementPool
 
         def initialize(connection, max)
           super
@@ -49,7 +49,7 @@ module ActiveRecord
         end
 
 
-        # FdbSql ===================================================
+        # FdbSql =================================================
 
         def next_key
           "ar_#{@count + 1}"

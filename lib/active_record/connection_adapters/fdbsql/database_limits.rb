@@ -2,7 +2,7 @@ module ActiveRecord
 
   module ConnectionAdapters
 
-    module FdbSql
+    class FdbSqlAdapter < AbstractAdapter
 
       module DatabaseLimits
 
@@ -11,7 +11,7 @@ module ActiveRecord
         end
 
         def index_name_length
-          # ruby-pg (driver) has a hard limit of NAMEDATALEN-1
+          # ruby-pg has a hard limit of NAMEDATALEN-1
           63
         end
       end
