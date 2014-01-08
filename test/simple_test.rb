@@ -23,16 +23,14 @@ class FDBSQLSimpleTest < Test::Unit::TestCase
 
   def setup()
 
-    ActiveRecord::Base.establish_connection(
-                                            :adapter  => 'fdbsql',
+    ActiveRecord::Base.establish_connection(:adapter  => 'fdbsql',
                                             :database => 'activerecord_unittest',
-                                            :host     => '127.0.0.1',
+                                            :host     => 'localhost',
                                             :port     => '15432',
                                             :username => 'test',
-                                            :password => 'password'
-                                           )
+                                            :password => '')
 
-    ActiveRecord::Schema.drop_table(User.table_name, :drop_group => true) rescue nil
+    ActiveRecord::Schema.drop_table(User.table_name) rescue nil
 
     ActiveRecord::Schema.drop_table(Addr.table_name) rescue nil
 
@@ -51,8 +49,6 @@ class FDBSQLSimpleTest < Test::Unit::TestCase
         t.string :zip, :limit => 6
       end
     end
-    ActiveRecord::Schema.add_grouping_foreign_key(Addr.table_name, User.table_name, 'user_id')
-
   end
 
 
