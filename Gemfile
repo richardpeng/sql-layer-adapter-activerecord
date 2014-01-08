@@ -3,13 +3,12 @@ source 'https://rubygems.org'
 if ENV['RAILS_SOURCE']
   gemspec :path => ENV['RAILS_SOURCE']
 else
-  version = ENV['RAILS_VERSION']
-  # If not present, use oldest supported
-  if !version
+  # If not present, lookup newest supported x.y
+  version = ENV['RAILS_VERSION'] || begin
     require 'net/http'
     require 'yaml'
     spec = eval(File.read('activerecord-fdbsql-adapter.gemspec'))
-    version = spec.dependencies.detect{ |d|d.name == 'activerecord' }.requirement.requirements.first.last.version
+    version = spec.dependencies.detect{ |d|d.name == 'activerecord' }.requirement.requirements.last.last.version
     major, minor, tiny = version.split('.')
     uri = URI.parse "http://rubygems.org/api/v1/versions/activerecord.yaml"
     YAML.load(Net::HTTP.get(uri)).select do |data|
