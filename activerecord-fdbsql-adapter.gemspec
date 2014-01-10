@@ -20,5 +20,5 @@ EOF
 
   # Known to work on 3.2.x
   s.add_dependency 'activerecord', '~> 3.2.0'
-  s.add_dependency 'pg'
+  s.add_dependency 'pg', '~> 0.11'
 end

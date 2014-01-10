@@ -12,7 +12,6 @@ require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'active_record/connection_adapters/fdbsql/statement_pool'
 
 # FoundationDB SQL Layer currently uses the Postgres protocol
-gem 'pg', '~> 0.11'
 require 'pg'
 
 module ActiveRecord
