@@ -96,6 +96,10 @@ module ActiveRecord
           # Nobody else implements this and it isn't called from anywhere
         end
 
+        def empty_insert_statement_value
+          "VALUES(DEFAULT)"
+        end
+
 
         # OTHER METHODS ============================================
 
