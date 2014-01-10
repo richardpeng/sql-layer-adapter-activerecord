@@ -18,3 +18,16 @@ index e28bb7b..48b2d6d 100644
        assert_nothing_raised do
          @connection.disable_referential_integrity do
            # Oracle adapter uses prefetched primary key values from sequence and passes them to connection adapter insert method
+diff --git a/activerecord/test/cases/migration_test.rb b/activerecord/test/cases/migration_test.rb
+index e99312c..d1d736f 100644
+--- a/activerecord/test/cases/migration_test.rb
++++ b/activerecord/test/cases/migration_test.rb
+@@ -443,7 +443,7 @@ class MigrationTest < ActiveRecord::TestCase
+   end
+ 
+   def test_out_of_range_limit_should_raise
+-    skip("MySQL and PostgreSQL only") unless current_adapter?(:MysqlAdapter, :Mysql2Adapter, :PostgreSQLAdapter)
++    skip("MySQL, PostgreSQL and FdbSql only") unless current_adapter?(:MysqlAdapter, :Mysql2Adapter, :PostgreSQLAdapter, :FdbSqlAdapter)
+ 
+     Person.connection.drop_table :test_limits rescue nil
+     assert_raise(ActiveRecord::ActiveRecordError, "integer limit didn't raise") do
