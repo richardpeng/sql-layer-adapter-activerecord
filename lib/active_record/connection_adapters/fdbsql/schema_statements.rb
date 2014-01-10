@@ -107,20 +107,22 @@ module ActiveRecord
           execute(sql, SCHEMA_LOG_NAME)
         end
 
-        # Removes the column(s) from the table definition.
-        def remove_column(table_name, *column_names)
-          if column_names.flatten!
-            ActiveSupport::Deprecation.warn(
-              'Passing array to remove_columns is deprecated, use multiple arguments',
-              caller
-            )
-          end
-          columns_for_remove(table_name, *column_names).each do |column_name|
-            # column_name already quoted
-            execute(
-              "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{column_name}",
-               SCHEMA_LOG_NAME
-            )
+        if ActiveRecord::VERSION::MAJOR < 4
+          # Removes the column(s) from the table definition.
+          def remove_column(table_name, *column_names)
+            if column_names.flatten!
+              ActiveSupport::Deprecation.warn(
+                'Passing array to remove_columns is deprecated, use multiple arguments',
+                caller
+              )
+            end
+            columns_for_remove(table_name, *column_names).each do |column_name|
+              # column_name already quoted
+              execute(
+                "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{column_name}",
+                 SCHEMA_LOG_NAME
+              )
+            end
           end
         end
 
@@ -176,16 +178,24 @@ module ActiveRecord
           when :integer
             # NB: Changes here need reflected in FdbSqlColumn.extract_limit()
             case limit
-              when nil, 1..4
-                type.to_s
-              when 5..8
-                'bigint'
-              else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
+            when nil, 1..4
+              type.to_s
+            when 5..8
+              'bigint'
+            else
+              raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
             end
           when :decimal
             # Maximum supported as of 1.9.2
             precision = 31 if precision.to_i > 31
             super
+          when :text
+            case limit
+            when nil, 0..0xfffffffe
+              super
+            else
+              raise(ActiveRecordError, "Limit #{limit} exceeds max TEXT length")
+            end
           else
             super
           end
