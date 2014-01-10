@@ -71,7 +71,8 @@ module ActiveRecord
 
       def initialize(connection, logger, connection_hash, config)
         super(connection, logger)
-        if config.fetch(:prepared_statements) { true }
+        @prepared_statements = config.fetch(:prepared_statements) { true }
+        if @prepared_statements
           @visitor = Arel::Visitors::FdbSql.new self
         else
           @visitor = BindSubstitution.new self
@@ -192,6 +193,14 @@ module ActiveRecord
         rescue
           super
         end
+
+        # Added in 4.1. Redefine for use prior.
+        def without_prepared_statement?(binds)
+          !@prepared_statements || binds.empty?
+        end
+
+
+        # FdbSql ===================================================
 
         def stmt_cache_prefix
           @config[:database]
