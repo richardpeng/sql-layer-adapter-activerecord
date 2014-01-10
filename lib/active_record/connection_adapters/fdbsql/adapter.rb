@@ -10,6 +10,7 @@ require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
 require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'active_record/connection_adapters/fdbsql/statement_pool'
+require 'active_record/connection_adapters/fdbsql/types'
 
 # FoundationDB SQL Layer currently uses the Postgres protocol
 require 'pg'
@@ -53,7 +54,7 @@ module ActiveRecord
         private
           # NB: Second argument added in 4.0.1
           def visit_Arel_Nodes_Lock(o, a = nil)
-            # Locks not supported
+            # SQL Layer does not support row locks
           end
       end
 
@@ -67,6 +68,10 @@ module ActiveRecord
       include DatabaseStatements
       include Quoting
       include SchemaStatements
+
+      if ActiveRecord::VERSION::MAJOR >= 4
+        include Types
+      end
 
 
       def initialize(connection, logger, connection_hash, config)

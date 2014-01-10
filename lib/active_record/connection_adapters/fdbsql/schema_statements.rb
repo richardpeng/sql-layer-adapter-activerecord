@@ -335,11 +335,6 @@ module ActiveRecord
         end
 
 
-        protected
-
-          # None
-
-
         private
 
           SCHEMA_LOG_NAME = 'FDB_SCHEMA'
