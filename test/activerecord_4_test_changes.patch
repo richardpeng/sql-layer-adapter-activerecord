@@ -31,7 +31,7 @@ index ed172b0..2c70ac1 100644
        assert_equal 3, projects(:active_record).developers_with_multiline_finder_sql.count
      end
 diff --git a/activerecord/test/cases/associations/has_many_associations_test.rb b/activerecord/test/cases/associations/has_many_associations_test.rb
-index 6f86434..2c348a1 100644
+index 6f86434..c7fc9b7 100644
 --- a/activerecord/test/cases/associations/has_many_associations_test.rb
 +++ b/activerecord/test/cases/associations/has_many_associations_test.rb
 @@ -886,6 +886,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
@@ -42,7 +42,15 @@ index 6f86434..2c348a1 100644
      good = Client.new(:name => "Good")
      bad  = Client.new(:name => "Bad", :raise_on_destroy => true)
  
-@@ -1297,6 +1298,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+@@ -934,6 +935,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_clearing_updates_counter_cache_when_inverse_counter_cache_is_a_symbol_with_dependent_destroy
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
+     car = Car.first
+     car.engines.create!
+ 
+@@ -1297,6 +1299,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
    end
  
    def test_transactions_when_replacing_on_persisted
