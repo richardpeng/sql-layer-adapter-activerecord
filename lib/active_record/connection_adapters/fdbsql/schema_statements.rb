@@ -88,6 +88,9 @@ module ActiveRecord
             "RENAME TABLE #{quote_table_name(old_name)} TO #{quote_table_name(new_name)}",
             SCHEMA_LOG_NAME
           )
+          if ActiveRecord::VERSION::MAJOR >= 4
+            rename_table_indexes(old_name, new_name)
+          end
         end
 
         # Adds a new column to the named table.
@@ -158,6 +161,9 @@ module ActiveRecord
             "#{quote_column_name(column_name)} TO #{quote_column_name(new_column_name)}",
             SCHEMA_LOG_NAME
           )
+          if ActiveRecord::VERSION::MAJOR >= 4
+            rename_column_indexes(table_name, column_name, new_column_name)
+          end
         end
 
         def remove_index!(table_name, index_name)
