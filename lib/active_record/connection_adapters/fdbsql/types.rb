@@ -47,6 +47,10 @@ module ActiveRecord
           end
 
           class Boolean < Type
+            def type_cast(value)
+              return if value.nil?
+              ConnectionAdapters::Column.value_to_boolean value
+            end
           end
 
           class Blob < Type
@@ -54,9 +58,22 @@ module ActiveRecord
           end
 
           class Date < Type
+            # TODO: Needed?
+            #def type
+            #  :datetime
+            #end
+
+            def type_cast(value)
+              return if value.nil?
+              ConnectionAdapters::Column.value_to_date value
+            end
           end
 
           class DateTime < Type
+            def type_cast(value)
+              return if value.nil?
+              ConnectionAdapters::Column.string_to_time value
+            end
           end
 
           class Decimal < Type
