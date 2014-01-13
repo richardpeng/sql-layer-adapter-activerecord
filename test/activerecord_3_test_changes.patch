@@ -31,7 +31,6 @@ index 53cce33..ee586fc 100644
  
    def test_transaction_when_deleting_persisted
 +    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
-+
      good = Client.new(:name => "Good")
      bad  = Client.new(:name => "Bad", :raise_on_destroy => true)
  
@@ -40,7 +39,6 @@ index 53cce33..ee586fc 100644
  
    def test_transactions_when_replacing_on_persisted
 +    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
-+
      good = Client.new(:name => "Good")
      bad  = Client.new(:name => "Bad", :raise_on_save => true)
  
