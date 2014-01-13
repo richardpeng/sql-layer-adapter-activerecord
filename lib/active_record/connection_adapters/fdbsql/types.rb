@@ -101,6 +101,10 @@ module ActiveRecord
           end
 
           class Time < Type
+            def type_cast(value)
+              return if value.nil?
+              ConnectionAdapters::Column.string_to_dummy_time value
+            end
           end
 
 
