@@ -201,21 +201,37 @@ module ActiveRecord
           end
         end
 
-        # Returns a SELECT DISTINCT clause for a given set of columns
-        # and a given ORDER BY clause.
-        #
-        # As with Postgres (where this was lifted from), the DISTINCT columns
-        # must be present in the ORDER BY clause.
-        def distinct(columns, orders)
-          return super if orders.empty?
+        if ActiveRecord::VERSION::MAJOR < 4
+          # Returns a SELECT DISTINCT clause for a given set of columns
+          # and a given ORDER BY clause.
+          #
+          # Deprecated in 4.0 in favor of new columns_for_distinct API
+          def distinct(columns, orders)
+            return super if orders.empty?
 
-          # Construct a clean list of column names from the ORDER BY clause, removing
-          # any ASC/DESC modifiers
-          order_columns = orders.collect { |s| s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '') }
-          order_columns.delete_if { |c| c.blank? }
-          order_columns = order_columns.zip((0...order_columns.size).to_a).map { |s,i| "#{s} AS alias_#{i}" }
+            # Construct a clean list of column names from the ORDER BY clause, removing
+            # any ASC/DESC modifiers
+            order_columns = orders.collect { |s| s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '') }
+            order_columns.delete_if { |c| c.blank? }
+            order_columns = order_columns.zip((0...order_columns.size).to_a).map { |s,i| "#{s} AS alias_#{i}" }
 
-          "DISTINCT #{columns}, #{order_columns * ', '}"
+            "DISTINCT #{columns}, #{order_columns * ', '}"
+          end
+        else
+          # Given a set of columns and an ORDER BY clause, returns the columns for a SELECT DISTINCT.
+          #
+          # FDB SQL requires order columns appear in the SELECT.
+          def columns_for_distinct(columns, orders)
+            # Lifted from the default Postgres implementation
+            order_columns = orders.map{ |s|
+                # Convert Arel node to string
+                s = s.to_sql unless s.is_a?(String)
+                # Remove any ASC/DESC modifiers
+                s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '')
+              }.reject(&:blank?).map.with_index { |column, i| "#{column} AS alias_#{i}" }
+
+            [super, *order_columns].join(', ')
+          end
         end
 
 
