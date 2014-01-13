@@ -144,7 +144,6 @@ module ActiveRecord
 
         private
 
-          BINARY_COLUMN_TYPE = 17
           STALE_STATEMENT_CODE = '0A50A'
 
 
@@ -180,7 +179,9 @@ module ActiveRecord
           def result_as_array(res)
             # Any binary columns need un-escaped
             binaries = []
-            res.nfields.times { |i| binaries << i if res.ftype(i) == BINARY_COLUMN_TYPE }
+            res.nfields.times { |i|
+              binaries << i if res.ftype(i) == Types::BLOB_OID
+            }
             rows = res.values
             return rows unless binaries.any?
             rows.each { |row|
@@ -220,13 +221,9 @@ module ActiveRecord
 
           def compute_field_types(result)
             types = {}
-            result.fields.each_with_index do |name, i|
-              ftype = result.ftype i
-              types[name] = Types::OID_TO_TYPE.fetch(ftype) { |oid|
-                warn "Unknown field type: #{name} => #{oid}"
-                Types::OID_TO_TYPE[Types::UNKNOWN_OID]
-              }
-            end
+            result.fields.each_with_index { |name, i|
+              types[name] = fetch_type(name, result.ftype(i), result.fmod(i))
+            }
             types
           end
 

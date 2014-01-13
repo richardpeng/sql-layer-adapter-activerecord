@@ -6,15 +6,32 @@ module ActiveRecord
 
       module Types
 
+        UNKNOWN_OID = -1
+        BLOB_OID    = 17
+        DECIMAL_OID = 1700
+        INTEGER_OID = 23
+
         NAME_TO_OID = {}
         OID_TO_TYPE = {}
-        UNKNOWN_OID = -1
+
+
+        def fetch_type(field_name, field_oid, field_mod)
+          # As in Column.simplified_type(), this needs to map zero-scale
+          # decimal columns to integers
+          if (field_oid == DECIMAL_OID) && ((field_mod - 4) & 0xffff).zero?
+            field_oid = INTEGER_OID
+          end
+          OID_TO_TYPE.fetch(field_oid) { |oid|
+            warn "Unknown field type: #{field_name} => #{oid}"
+            OID_TO_TYPE[Types::UNKNOWN_OID]
+          }
+        end
 
 
         private
 
           # Note: These use the SQL Layer type names as opposed to the
-          # ActiveRecord ones (i.e. BLOB instead of BINARY).
+          # ActiveRecord ones (e.g. BLOB instead of BINARY).
 
           class Type
             def type()
@@ -93,15 +110,15 @@ module ActiveRecord
 
 
           # Primary AR types, see schema_statements.NATIVE_DATABASE_TYPES
-          add_type 'blob',      17,   Blob.new
-          add_type 'boolean',   16,   Boolean.new
-          add_type 'date',      1082, Date.new
-          add_type 'datetime',  1114, DateTime.new
-          add_type 'decimal',   1700, Decimal.new
-          add_type 'double',    701,  Double.new
-          add_type 'integer',   23,   Integer.new
-          add_type 'varchar',   1043, String.new
-          add_type 'time',      1083, Time.new
+          add_type 'blob',      BLOB_OID,     Blob.new
+          add_type 'boolean',   16,           Boolean.new
+          add_type 'date',      1082,         Date.new
+          add_type 'datetime',  1114,         DateTime.new
+          add_type 'decimal',   DECIMAL_OID,  Decimal.new
+          add_type 'double',    701,          Double.new
+          add_type 'integer',   INTEGER_OID,  Integer.new
+          add_type 'varchar',   1043,         String.new
+          add_type 'time',      1083,         Time.new
 
           # SERIAL maps to BIGINT. Not an alias but reusable Type.
           add_alias 'bigint', 'integer', 20
