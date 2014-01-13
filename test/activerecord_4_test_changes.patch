@@ -1,12 +1,12 @@
 diff --git a/activerecord/test/cases/adapter_test.rb b/activerecord/test/cases/adapter_test.rb
-index e28bb7b..48b2d6d 100644
+index e28bb7b..ae2f938 100644
 --- a/activerecord/test/cases/adapter_test.rb
 +++ b/activerecord/test/cases/adapter_test.rb
 @@ -11,6 +11,7 @@ module ActiveRecord
      # PostgreSQL does not support null bytes in strings
      unless current_adapter?(:PostgreSQLAdapter)
        def test_update_prepared_statement
-+        return skip "FDBSQL: Strings with embeddeds nulls not supported" if current_adapter?(:FdbSqlAdapter)
++        return skip "FDBSQL: Driver does not support Strings with embedded nulls" if current_adapter?(:FdbSqlAdapter)
          b = Book.create(name: "my \x00 book")
          b.reload
          assert_equal "my \x00 book", b.name
