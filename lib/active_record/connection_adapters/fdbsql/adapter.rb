@@ -10,7 +10,12 @@ require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
 require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'active_record/connection_adapters/fdbsql/statement_pool'
-require 'active_record/connection_adapters/fdbsql/types'
+
+if ActiveRecord::VERSION::MAJOR >= 4
+  require 'active_record/connection_adapters/fdbsql/schema_creation'
+  require 'active_record/connection_adapters/fdbsql/types'
+end
+
 
 # FoundationDB SQL Layer currently uses the Postgres protocol
 require 'pg'
@@ -91,6 +96,10 @@ module ActiveRecord
 
 
       # ADAPTER ==================================================
+
+      def schema_creation
+        FdbSqlSchemaCreation.new self
+      end
 
       def adapter_name
         ADAPTER_NAME
