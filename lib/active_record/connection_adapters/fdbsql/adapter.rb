@@ -21,10 +21,11 @@ module ActiveRecord
 
     def self.fdbsql_connection(config)
       config = config.symbolize_keys
-      host = config[:host] || "localhost"
-      port = config[:port] || 15432
-      user = config[:username].to_s if config[:username]
-      pass = config[:password].to_s if config[:password]
+      config[:host]     = 'localhost' unless config[:host]
+      config[:port]     = 15432       unless config[:port]
+      config[:username] = 'fdbsql'    unless config[:username]
+      config[:password] = ''          unless config[:password]
+      config[:encoding] = 'UTF-8'     unless config[:encoding]
 
       if config.key?(:database)
         database = config[:database]
@@ -34,11 +35,11 @@ module ActiveRecord
 
       # pg doesn't allow unconnected connections so just forward parameters
       conn_hash = {
-        :host => host,
-        :port => port,
-        :dbname => database,
-        :user => user,
-        :password => pass
+        :host => config[:host],
+        :port => config[:port],
+        :dbname => config[:database],
+        :user => config[:username],
+        :password => config[:password]
       }
       ConnectionAdapters::FdbSqlAdapter.new(nil, logger, conn_hash, config)
     end
@@ -211,6 +212,7 @@ module ActiveRecord
           @config[:database]
         end
 
+
       private
 
         ADAPTER_NAME = 'FDBSQL'.freeze
@@ -221,15 +223,16 @@ module ActiveRecord
 
         def connect
           @connection = PG::Connection.new(@connection_hash)
-          # Swallow warnings
-          @connection.set_notice_receiver { |proc| }
-          # TODO: Check FDB SQL version
+          configure_connection
         end
 
         def configure_connection
-          if @config[:encoding]
-            @connection.set_client_encoding(@config[:encoding])
-          end
+          @connection.set_client_encoding(@config[:encoding])
+
+          # Swallow warnings
+          @connection.set_notice_receiver { |proc| }
+
+          # TODO: Check FDB SQL version
 
           # TODO: Timezone when supported by SQL Layer
           #if ActiveRecord::Base.default_timezone == :utc
