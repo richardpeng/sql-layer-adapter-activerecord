@@ -1,0 +1,184 @@
+diff --git a/activerecord/lib/active_record/test_case.rb b/activerecord/lib/active_record/test_case.rb
+index e914248..5aff27c 100644
+--- a/activerecord/lib/active_record/test_case.rb
++++ b/activerecord/lib/active_record/test_case.rb
+@@ -69,8 +69,9 @@ module ActiveRecord
+     mysql_ignored      = [/^SHOW TABLES/i, /^SHOW FULL FIELDS/]
+     postgresql_ignored = [/^\s*select\b.*\bfrom\b.*pg_namespace\b/im, /^\s*select\b.*\battname\b.*\bfrom\b.*\bpg_attribute\b/im, /^SHOW search_path/i]
+     sqlite3_ignored =    [/^\s*SELECT name\b.*\bFROM sqlite_master/im]
++    fdbsql_ignored     = [/^\s*SELECT\b.*\bFROM\b.*\binformation_schema\b/im]
+ 
+-    [oracle_ignored, mysql_ignored, postgresql_ignored, sqlite3_ignored].each do |db_ignored_sql|
++    [oracle_ignored, mysql_ignored, postgresql_ignored, sqlite3_ignored, fdbsql_ignored].each do |db_ignored_sql|
+       ignored_sql.concat db_ignored_sql
+     end
+ 
+diff --git a/activerecord/test/cases/adapter_test.rb b/activerecord/test/cases/adapter_test.rb
+index e28bb7b..ae2f938 100644
+--- a/activerecord/test/cases/adapter_test.rb
++++ b/activerecord/test/cases/adapter_test.rb
+@@ -11,6 +11,7 @@ module ActiveRecord
+     # PostgreSQL does not support null bytes in strings
+     unless current_adapter?(:PostgreSQLAdapter)
+       def test_update_prepared_statement
++        return skip "FDBSQL: Driver does not support Strings with embedded nulls" if current_adapter?(:FdbSqlAdapter)
+         b = Book.create(name: "my \x00 book")
+         b.reload
+         assert_equal "my \x00 book", b.name
+@@ -158,6 +159,7 @@ module ActiveRecord
+     end
+ 
+     def test_disable_referential_integrity
++      return skip "FDBSQL: Disabling refential integrity is not supported" if current_adapter?(:FdbSqlAdapter)
+       assert_nothing_raised do
+         @connection.disable_referential_integrity do
+           # Oracle adapter uses prefetched primary key values from sequence and passes them to connection adapter insert method
+diff --git a/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb b/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
+index ed172b0..2c70ac1 100644
+--- a/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
++++ b/activerecord/test/cases/associations/has_and_belongs_to_many_associations_test.rb
+@@ -801,6 +801,7 @@ class HasAndBelongsToManyAssociationsTest < ActiveRecord::TestCase
+ 
+   unless current_adapter?(:PostgreSQLAdapter)
+     def test_count_with_finder_sql
++      return skip "FDBSQL: Columns used in aggregates must appear in GROUP BY" if current_adapter?(:FdbSqlAdapter)
+       assert_equal 3, projects(:active_record).developers_with_finder_sql.count
+       assert_equal 3, projects(:active_record).developers_with_multiline_finder_sql.count
+     end
+diff --git a/activerecord/test/cases/associations/has_many_associations_test.rb b/activerecord/test/cases/associations/has_many_associations_test.rb
+index 6f86434..c7fc9b7 100644
+--- a/activerecord/test/cases/associations/has_many_associations_test.rb
++++ b/activerecord/test/cases/associations/has_many_associations_test.rb
+@@ -886,6 +886,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_transaction_when_deleting_persisted
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
+     good = Client.new(:name => "Good")
+     bad  = Client.new(:name => "Bad", :raise_on_destroy => true)
+ 
+@@ -934,6 +935,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_clearing_updates_counter_cache_when_inverse_counter_cache_is_a_symbol_with_dependent_destroy
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
+     car = Car.first
+     car.engines.create!
+ 
+@@ -1297,6 +1299,7 @@ class HasManyAssociationsTest < ActiveRecord::TestCase
+   end
+ 
+   def test_transactions_when_replacing_on_persisted
++    return skip "Test requires SAVEPOINT support" unless supports_savepoints?
+     good = Client.new(:name => "Good")
+     bad  = Client.new(:name => "Bad", :raise_on_save => true)
+ 
+diff --git a/activerecord/test/cases/autosave_association_test.rb b/activerecord/test/cases/autosave_association_test.rb
+index 635278a..cbe70f5 100644
+--- a/activerecord/test/cases/autosave_association_test.rb
++++ b/activerecord/test/cases/autosave_association_test.rb
+@@ -569,6 +569,8 @@ class TestDestroyAsPartOfAutosaveAssociation < ActiveRecord::TestCase
+   self.use_transactional_fixtures = false
+ 
+   def setup
++    # Ensure clean state for adapters without savepoints
++    Bird.delete_all unless supports_savepoints?
+     super
+     @pirate = Pirate.create(:catchphrase => "Don' botharrr talkin' like one, savvy?")
+     @ship = @pirate.create_ship(:name => 'Nights Dirty Lightning')
+diff --git a/activerecord/test/cases/base_test.rb b/activerecord/test/cases/base_test.rb
+index 36c0fd2..a3da3d3 100755
+--- a/activerecord/test/cases/base_test.rb
++++ b/activerecord/test/cases/base_test.rb
+@@ -102,6 +102,7 @@ class BasicsTest < ActiveRecord::TestCase
+       'Mysql2Adapter'     => '`',
+       'PostgreSQLAdapter' => '"',
+       'OracleAdapter'     => '"',
++      'FdbSqlAdapter'     => '"',
+     }.fetch(classname) {
+       raise "need a bad char for #{classname}"
+     }
+@@ -156,6 +157,7 @@ class BasicsTest < ActiveRecord::TestCase
+ 
+   unless current_adapter?(:MysqlAdapter, :Mysql2Adapter)
+     def test_limit_should_allow_sql_literal
++      return skip "FDBSQL: LIMIT does not support expressions" if current_adapter?(:FdbSqlAdapter)
+       assert_equal 1, Topic.limit(Arel.sql('2-1')).to_a.length
+     end
+   end
+@@ -616,6 +618,7 @@ class BasicsTest < ActiveRecord::TestCase
+     if current_adapter?(:PostgreSQLAdapter)
+       skip 'pg does not respect internal encoding and always returns utf8'
+     end
++    return skip "FDBSQL: Column name encoding not supported" if current_adapter?(:FdbSqlAdapter)
+     old_default_internal = Encoding.default_internal
+     silence_warnings { Encoding.default_internal = "EUC-JP" }
+ 
+diff --git a/activerecord/test/cases/invalid_connection_test.rb b/activerecord/test/cases/invalid_connection_test.rb
+index f2d8f18..0cce39d 100644
+--- a/activerecord/test/cases/invalid_connection_test.rb
++++ b/activerecord/test/cases/invalid_connection_test.rb
+@@ -9,7 +9,11 @@ class TestAdapterWithInvalidConnection < ActiveRecord::TestCase
+   def setup
+     # Can't just use current adapter; sqlite3 will create a database
+     # file on the fly.
+-    Bird.establish_connection adapter: 'mysql', database: 'i_do_not_exist'
++    begin
++      Bird.establish_connection adapter: 'mysql', database: 'i_do_not_exist'
++    rescue Gem::LoadError
++      return skip "mysql is not available"
++    end
+   end
+ 
+   def teardown
+diff --git a/activerecord/test/cases/migration_test.rb b/activerecord/test/cases/migration_test.rb
+index e99312c..d1d736f 100644
+--- a/activerecord/test/cases/migration_test.rb
++++ b/activerecord/test/cases/migration_test.rb
+@@ -443,7 +443,7 @@ class MigrationTest < ActiveRecord::TestCase
+   end
+ 
+   def test_out_of_range_limit_should_raise
+-    skip("MySQL and PostgreSQL only") unless current_adapter?(:MysqlAdapter, :Mysql2Adapter, :PostgreSQLAdapter)
++    skip("MySQL, PostgreSQL and FdbSql only") unless current_adapter?(:MysqlAdapter, :Mysql2Adapter, :PostgreSQLAdapter, :FdbSqlAdapter)
+ 
+     Person.connection.drop_table :test_limits rescue nil
+     assert_raise(ActiveRecord::ActiveRecordError, "integer limit didn't raise") do
+diff --git a/activerecord/test/cases/persistence_test.rb b/activerecord/test/cases/persistence_test.rb
+index db3bb56..1388c59 100644
+--- a/activerecord/test/cases/persistence_test.rb
++++ b/activerecord/test/cases/persistence_test.rb
+@@ -31,6 +31,7 @@ class PersistencesTest < ActiveRecord::TestCase
+     end
+ 
+     def test_update_all_doesnt_ignore_order
++      return skip "FDBSQL: Test assumes non-standard compatible constraint failure" if current_adapter?(:FdbSqlAdapter)
+       assert_equal authors(:david).id + 1, authors(:mary).id # make sure there is going to be a duplicate PK error
+       test_update_with_order_succeeds = lambda do |order|
+         begin
+@@ -681,6 +682,11 @@ class PersistencesTest < ActiveRecord::TestCase
+     assert_raise(ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid) do
+       topic.update_attributes(id: 3, title: "Hm is it possible?")
+     end
++    # FDBSQL: Statements not allowed after ROLLBACK
++    if current_adapter?(:FdbSqlAdapter)
++      ActiveRecord::Base.connection.rollback_transaction
++      ActiveRecord::Base.connection.begin_transaction
++    end
+     assert_not_equal "Hm is it possible?", Topic.find(3).title
+ 
+     topic.update_attributes(id: 1234)
+diff --git a/activerecord/test/cases/schema_dumper_test.rb b/activerecord/test/cases/schema_dumper_test.rb
+index 1ee8e60..8b59432 100644
+--- a/activerecord/test/cases/schema_dumper_test.rb
++++ b/activerecord/test/cases/schema_dumper_test.rb
+@@ -344,6 +344,9 @@ class SchemaDumperTest < ActiveRecord::TestCase
+     # Oracle supports precision up to 38 and it identifies decimals with scale 0 as integers
+     if current_adapter?(:OracleAdapter)
+       assert_match %r{t.integer\s+"atoms_in_universe",\s+precision: 38,\s+scale: 0}, output
++    # FDBSQL: Supports precision up to 31
++    elsif current_adapter?(:FdbSqlAdapter)
++      assert_match %r{t.decimal\s+"atoms_in_universe",\s+precision: 31,\s+scale: 0}, output
+     else
+       assert_match %r{t.decimal\s+"atoms_in_universe",\s+precision: 55,\s+scale: 0}, output
+     end

@@ -88,39 +88,38 @@ module ActiveRecord
             "RENAME TABLE #{quote_table_name(old_name)} TO #{quote_table_name(new_name)}",
             SCHEMA_LOG_NAME
           )
+          # TODO: Rename sequence when syntax is supported
+          if ActiveRecord::VERSION::MAJOR >= 4
+            rename_table_indexes(old_name, new_name)
+          end
         end
 
-        # Adds a new column to the named table.
-        # See TableDefinition#column for details of the options you can use.
-        def add_column(table_name, column_name, type, options = {})
-          # As of 1.9.2, identity cannot be present in ADD COLUMN. Perform in two statements.
-          sql = "ALTER TABLE #{quote_table_name(table_name)} "+
-                "ADD COLUMN #{quote_column_name(column_name)} "+
-                "#{(type == :primary_key) ? PK_TYPE_BASE : type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
-          add_column_options!(sql, options)
-          if type == :primary_key
-            sql = sql + "; "+
-                  "ALTER TABLE #{quote_table_name(table_name)} "+
-                  "ALTER COLUMN #{quote_column_name(column_name)} "+
-                  "SET #{GENERATED_IDENTITY}"
+        if ActiveRecord::VERSION::MAJOR < 4
+          # Adds a new column to the named table.
+          # See TableDefinition#column for details of the options you can use.
+          def add_column(table_name, column_name, type, options = {})
+            sql = "ALTER TABLE #{quote_table_name(table_name)} "+
+                  "ADD COLUMN #{quote_column_name(column_name)} "+
+                  "#{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
+            add_column_options!(sql, options)
+            execute(sql, SCHEMA_LOG_NAME)
           end
-          execute(sql, SCHEMA_LOG_NAME)
-        end
 
-        # Removes the column(s) from the table definition.
-        def remove_column(table_name, *column_names)
-          if column_names.flatten!
-            ActiveSupport::Deprecation.warn(
-              'Passing array to remove_columns is deprecated, use multiple arguments',
-              caller
-            )
-          end
-          columns_for_remove(table_name, *column_names).each do |column_name|
-            # column_name already quoted
-            execute(
-              "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{column_name}",
-               SCHEMA_LOG_NAME
-            )
+          # Removes the column(s) from the table definition.
+          def remove_column(table_name, *column_names)
+            if column_names.flatten!
+              ActiveSupport::Deprecation.warn(
+                'Passing array to remove_columns is deprecated, use multiple arguments',
+                caller
+              )
+            end
+            columns_for_remove(table_name, *column_names).each do |column_name|
+              # column_name already quoted
+              execute(
+                "ALTER TABLE #{quote_table_name(table_name)} DROP COLUMN #{column_name}",
+                 SCHEMA_LOG_NAME
+              )
+            end
           end
         end
 
@@ -156,6 +155,9 @@ module ActiveRecord
             "#{quote_column_name(column_name)} TO #{quote_column_name(new_column_name)}",
             SCHEMA_LOG_NAME
           )
+          if ActiveRecord::VERSION::MAJOR >= 4
+            rename_column_indexes(table_name, column_name, new_column_name)
+          end
         end
 
         def remove_index!(table_name, index_name)
@@ -176,36 +178,60 @@ module ActiveRecord
           when :integer
             # NB: Changes here need reflected in FdbSqlColumn.extract_limit()
             case limit
-              when nil, 1..4
-                type.to_s
-              when 5..8
-                'bigint'
-              else raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
+            when nil, 1..4
+              type.to_s
+            when 5..8
+              'bigint'
+            else
+              raise(ActiveRecordError, "No integer type has byte size #{limit}. Use a decimal with precision 0 instead.")
             end
           when :decimal
             # Maximum supported as of 1.9.2
             precision = 31 if precision.to_i > 31
             super
+          when :text
+            case limit
+            when nil, 0..0xfffffffe
+              super
+            else
+              raise(ActiveRecordError, "Limit #{limit} exceeds max TEXT length")
+            end
           else
             super
           end
         end
 
-        # Returns a SELECT DISTINCT clause for a given set of columns
-        # and a given ORDER BY clause.
-        #
-        # As with Postgres (where this was lifted from), the DISTINCT columns
-        # must be present in the ORDER BY clause.
-        def distinct(columns, orders)
-          return super if orders.empty?
+        if ActiveRecord::VERSION::MAJOR < 4
+          # Returns a SELECT DISTINCT clause for a given set of columns
+          # and a given ORDER BY clause.
+          #
+          # Deprecated in 4.0 in favor of new columns_for_distinct API
+          def distinct(columns, orders)
+            return super if orders.empty?
 
-          # Construct a clean list of column names from the ORDER BY clause, removing
-          # any ASC/DESC modifiers
-          order_columns = orders.collect { |s| s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '') }
-          order_columns.delete_if { |c| c.blank? }
-          order_columns = order_columns.zip((0...order_columns.size).to_a).map { |s,i| "#{s} AS alias_#{i}" }
+            # Construct a clean list of column names from the ORDER BY clause, removing
+            # any ASC/DESC modifiers
+            order_columns = orders.collect { |s| s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '') }
+            order_columns.delete_if { |c| c.blank? }
+            order_columns = order_columns.zip((0...order_columns.size).to_a).map { |s,i| "#{s} AS alias_#{i}" }
 
-          "DISTINCT #{columns}, #{order_columns * ', '}"
+            "DISTINCT #{columns}, #{order_columns * ', '}"
+          end
+        else
+          # Given a set of columns and an ORDER BY clause, returns the columns for a SELECT DISTINCT.
+          #
+          # FDB SQL requires order columns appear in the SELECT.
+          def columns_for_distinct(columns, orders)
+            # Lifted from the default Postgres implementation
+            order_columns = orders.map{ |s|
+                # Convert Arel node to string
+                s = s.to_sql unless s.is_a?(String)
+                # Remove any ASC/DESC modifiers
+                s.gsub(/\s+(ASC|DESC)\s*(NULLS\s+(FIRST|LAST)\s*)?/i, '')
+              }.reject(&:blank?).map.with_index { |column, i| "#{column} AS alias_#{i}" }
+
+            [super, *order_columns].join(', ')
+          end
         end
 
 
@@ -335,19 +361,12 @@ module ActiveRecord
         end
 
 
-        protected
-
-          # None
-
-
         private
 
           SCHEMA_LOG_NAME = 'FDB_SCHEMA'
-          PK_TYPE_BASE = 'bigint not null primary key'
-          GENERATED_IDENTITY = 'generated by default as identity'
 
           NATIVE_DATABASE_TYPES = {
-            :primary_key  => { name: "#{PK_TYPE_BASE} #{GENERATED_IDENTITY}" }, # NB: Not using SERIAL to avoid double index
+            :primary_key  => { name: "serial primary key" },
             :string       => { name: "varchar", limit: 255 },
             :text         => { name: "clob" },
             :integer      => { name: "integer" },

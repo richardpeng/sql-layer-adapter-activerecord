@@ -24,8 +24,15 @@ module ActiveRecord
         # the executed +sql+ statement.
         def exec_query(sql, name = 'SQL', binds = [])
           log(sql, name, binds) do
-            result = binds.any? ? exec_cache(sql, binds) : exec_no_cache(sql)
-            ret = ActiveRecord::Result.new(result.fields, result_as_array(result))
+            result = without_prepared_statement?(binds) ? exec_no_cache(sql) :
+                                                          exec_cache(sql, binds)
+            result_array = result_as_array(result)
+            if ActiveRecord::VERSION::MAJOR >= 4
+              column_types = compute_field_types(result)
+              ret = ActiveRecord::Result.new(result.fields, result_array, column_types)
+            else
+              ret = ActiveRecord::Result.new(result.fields, result_array)
+            end
             result.clear
             ret
           end
@@ -36,7 +43,8 @@ module ActiveRecord
         # the executed +sql+ statement.
         def exec_delete(sql, name = 'SQL', binds = [])
           log(sql, name, binds) do
-            result = binds.any? ? exec_cache(sql, binds) : exec_no_cache(sql)
+            result = without_prepared_statement?(binds) ? exec_no_cache(sql) :
+                                                          exec_cache(sql, binds)
             affected = result.cmd_tuples
             result.clear
             affected
@@ -44,15 +52,17 @@ module ActiveRecord
         end
         alias :exec_update :exec_delete
 
-        # Checks whether there is currently no transaction active. This is done
-        # by querying the database driver, and does not use the transaction
-        # house-keeping information recorded by #increment_open_transactions and
-        # friends.
-        #
-        # Returns true if there is no transaction active, false if there is a
-        # transaction active, and nil if this information is unknown.
-        def outside_transaction?
-          @connection.transaction_status == PGconn::PQTRANS_IDLE
+        if ActiveRecord::VERSION::MAJOR < 4
+          # Checks whether there is currently no transaction active. This is done
+          # by querying the database driver, and does not use the transaction
+          # house-keeping information recorded by #increment_open_transactions and
+          # friends.
+          #
+          # Returns true if there is no transaction active, false if there is a
+          # transaction active, and nil if this information is unknown.
+          def outside_transaction?
+            @connection.transaction_status == PGconn::PQTRANS_IDLE
+          end
         end
 
         # Returns +true+ when the connection adapter supports prepared statement
@@ -86,6 +96,10 @@ module ActiveRecord
           # Nobody else implements this and it isn't called from anywhere
         end
 
+        def empty_insert_statement_value
+          "VALUES(DEFAULT)"
+        end
+
 
         # OTHER METHODS ============================================
 
@@ -101,7 +115,8 @@ module ActiveRecord
           # Returns an array of record hashes with the column names as keys and
           # column values as values.
           def select(sql, name = nil, binds = [])
-            exec_query(sql, name, binds).to_a
+            ret = exec_query(sql, name, binds)
+            ActiveRecord::VERSION::MAJOR >= 4 ? ret : ret.to_a
           end
 
           # (Executes an INSERT and)
@@ -129,7 +144,6 @@ module ActiveRecord
 
         private
 
-          BINARY_COLUMN_TYPE = 17
           STALE_STATEMENT_CODE = '0A50A'
 
 
@@ -165,7 +179,9 @@ module ActiveRecord
           def result_as_array(res)
             # Any binary columns need un-escaped
             binaries = []
-            res.nfields.times { |i| binaries << i if res.ftype(i) == BINARY_COLUMN_TYPE }
+            res.nfields.times { |i|
+              binaries << i if res.ftype(i) == TypeID::BLOB
+            }
             rows = res.values
             return rows unless binaries.any?
             rows.each { |row|
@@ -201,6 +217,14 @@ module ActiveRecord
               @statements[sql_key] = nkey
             end
             @statements[sql_key]
+          end
+
+          def compute_field_types(result)
+            types = {}
+            result.fields.each_with_index { |name, i|
+              types[name] = fetch_type(name, result.ftype(i), result.fmod(i))
+            }
+            types
           end
 
       end

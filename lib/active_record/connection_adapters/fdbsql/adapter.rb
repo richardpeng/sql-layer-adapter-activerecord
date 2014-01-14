@@ -10,9 +10,15 @@ require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
 require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'active_record/connection_adapters/fdbsql/statement_pool'
+require 'active_record/connection_adapters/fdbsql/typeid'
+
+if ActiveRecord::VERSION::MAJOR >= 4
+  require 'active_record/connection_adapters/fdbsql/schema_creation'
+  require 'active_record/connection_adapters/fdbsql/types'
+end
+
 
 # FoundationDB SQL Layer currently uses the Postgres protocol
-gem 'pg', '~> 0.11'
 require 'pg'
 
 module ActiveRecord
@@ -21,10 +27,11 @@ module ActiveRecord
 
     def self.fdbsql_connection(config)
       config = config.symbolize_keys
-      host = config[:host] || "localhost"
-      port = config[:port] || 15432
-      user = config[:username].to_s if config[:username]
-      pass = config[:password].to_s if config[:password]
+      config[:host]     = 'localhost' unless config[:host]
+      config[:port]     = 15432       unless config[:port]
+      config[:username] = 'fdbsql'    unless config[:username]
+      config[:password] = ''          unless config[:password]
+      config[:encoding] = 'UTF-8'     unless config[:encoding]
 
       if config.key?(:database)
         database = config[:database]
@@ -34,11 +41,11 @@ module ActiveRecord
 
       # pg doesn't allow unconnected connections so just forward parameters
       conn_hash = {
-        :host => host,
-        :port => port,
-        :dbname => database,
-        :user => user,
-        :password => pass
+        :host => config[:host],
+        :port => config[:port],
+        :dbname => config[:database],
+        :user => config[:username],
+        :password => config[:password]
       }
       ConnectionAdapters::FdbSqlAdapter.new(nil, logger, conn_hash, config)
     end
@@ -54,7 +61,7 @@ module ActiveRecord
         private
           # NB: Second argument added in 4.0.1
           def visit_Arel_Nodes_Lock(o, a = nil)
-            # Locks not supported
+            # SQL Layer does not support row locks
           end
       end
 
@@ -68,11 +75,17 @@ module ActiveRecord
       include DatabaseStatements
       include Quoting
       include SchemaStatements
+      include TypeID
+
+      if ActiveRecord::VERSION::MAJOR >= 4
+        include Types
+      end
 
 
       def initialize(connection, logger, connection_hash, config)
         super(connection, logger)
-        if config.fetch(:prepared_statements) { true }
+        @prepared_statements = config.fetch(:prepared_statements) { true }
+        if @prepared_statements
           @visitor = Arel::Visitors::FdbSql.new self
         else
           @visitor = BindSubstitution.new self
@@ -85,6 +98,12 @@ module ActiveRecord
 
 
       # ADAPTER ==================================================
+
+      if ActiveRecord::VERSION::MAJOR >= 4
+        def schema_creation
+          FdbSqlSchemaCreation.new self
+        end
+      end
 
       def adapter_name
         ADAPTER_NAME
@@ -194,9 +213,18 @@ module ActiveRecord
           super
         end
 
+        # Added in 4.1. Redefine for use prior.
+        def without_prepared_statement?(binds)
+          !@prepared_statements || binds.empty?
+        end
+
+
+        # FdbSql ===================================================
+
         def stmt_cache_prefix
           @config[:database]
         end
+
 
       private
 
@@ -208,15 +236,16 @@ module ActiveRecord
 
         def connect
           @connection = PG::Connection.new(@connection_hash)
-          # Swallow warnings
-          @connection.set_notice_receiver { |proc| }
-          # TODO: Check FDB SQL version
+          configure_connection
         end
 
         def configure_connection
-          if @config[:encoding]
-            @connection.set_client_encoding(@config[:encoding])
-          end
+          @connection.set_client_encoding(@config[:encoding])
+
+          # Swallow warnings
+          @connection.set_notice_receiver { |proc| }
+
+          # TODO: Check FDB SQL version
 
           # TODO: Timezone when supported by SQL Layer
           #if ActiveRecord::Base.default_timezone == :utc
