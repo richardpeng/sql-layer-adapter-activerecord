@@ -180,7 +180,7 @@ module ActiveRecord
             # Any binary columns need un-escaped
             binaries = []
             res.nfields.times { |i|
-              binaries << i if res.ftype(i) == Types::BLOB_OID
+              binaries << i if res.ftype(i) == TypeID::BLOB
             }
             rows = res.values
             return rows unless binaries.any?

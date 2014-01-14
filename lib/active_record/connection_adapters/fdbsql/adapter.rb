@@ -10,6 +10,7 @@ require 'active_record/connection_adapters/fdbsql/database_statements'
 require 'active_record/connection_adapters/fdbsql/quoting'
 require 'active_record/connection_adapters/fdbsql/schema_statements'
 require 'active_record/connection_adapters/fdbsql/statement_pool'
+require 'active_record/connection_adapters/fdbsql/typeid'
 
 if ActiveRecord::VERSION::MAJOR >= 4
   require 'active_record/connection_adapters/fdbsql/schema_creation'
@@ -74,6 +75,7 @@ module ActiveRecord
       include DatabaseStatements
       include Quoting
       include SchemaStatements
+      include TypeID
 
       if ActiveRecord::VERSION::MAJOR >= 4
         include Types
@@ -97,8 +99,10 @@ module ActiveRecord
 
       # ADAPTER ==================================================
 
-      def schema_creation
-        FdbSqlSchemaCreation.new self
+      if ActiveRecord::VERSION::MAJOR >= 4
+        def schema_creation
+          FdbSqlSchemaCreation.new self
+        end
       end
 
       def adapter_name
