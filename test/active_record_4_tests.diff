@@ -1,3 +1,18 @@
+diff --git a/activerecord/lib/active_record/test_case.rb b/activerecord/lib/active_record/test_case.rb
+index e914248..5aff27c 100644
+--- a/activerecord/lib/active_record/test_case.rb
++++ b/activerecord/lib/active_record/test_case.rb
+@@ -69,8 +69,9 @@ module ActiveRecord
+     mysql_ignored      = [/^SHOW TABLES/i, /^SHOW FULL FIELDS/]
+     postgresql_ignored = [/^\s*select\b.*\bfrom\b.*pg_namespace\b/im, /^\s*select\b.*\battname\b.*\bfrom\b.*\bpg_attribute\b/im, /^SHOW search_path/i]
+     sqlite3_ignored =    [/^\s*SELECT name\b.*\bFROM sqlite_master/im]
++    fdbsql_ignored     = [/^\s*SELECT\b.*\bFROM\b.*\binformation_schema\b/im]
+ 
+-    [oracle_ignored, mysql_ignored, postgresql_ignored, sqlite3_ignored].each do |db_ignored_sql|
++    [oracle_ignored, mysql_ignored, postgresql_ignored, sqlite3_ignored, fdbsql_ignored].each do |db_ignored_sql|
+       ignored_sql.concat db_ignored_sql
+     end
+ 
 diff --git a/activerecord/test/cases/adapter_test.rb b/activerecord/test/cases/adapter_test.rb
 index e28bb7b..ae2f938 100644
 --- a/activerecord/test/cases/adapter_test.rb
