@@ -8,6 +8,16 @@ fault-tolerance and true multi-key ACID transactions.
 This project provides connection adapter integration for ActiveRecord.
 
 
+### Supported SQL Layer Versions
+
+The 1.9.3 is the minimum recommended version for use with this adapter.
+
+While 1.9.2 is technically supported, it is known to contain a number of
+limitations hindering full use (e.g. no FOREIGN KEY or INSERT of DEFAULT).
+
+All previous releases are unsupported.
+
+
 ### Supported ActiveRecord Versions
 
 This project currently supports Rails v3.2 and v4.0.
