@@ -53,13 +53,20 @@ namespace :test do
   end
 
   test_task('unit', test_files(true, false))
-  test_task('activerecord', test_files(false, true))
-  test_task('both', test_files(true, true))
+  test_task('active_record', test_files(false, true))
+  test_task('all', test_files(true, true))
 
-  task :print_test_files do
+  desc "Print all files that would be run with the given arguments"
+  task :print_files do
     for f in test_files(false, true) do
       puts f
     end
+  end
+
+  desc "Echo the command for patching the ActiveRecord tests"
+  task :patch_cmd do
+    require 'active_record'
+    puts "git apply --directory=#{AR_PATH}/.. test/active_record_#{ActiveRecord::VERSION::MAJOR}_tests.diff"
   end
 end
 
