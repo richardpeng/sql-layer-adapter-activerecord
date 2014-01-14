@@ -52,10 +52,13 @@ module ActiveRecord
         # Returns an array of Column objects for the table specified by +table_name+.
         # See the concrete implementation for details on the expected parameter values.
         def columns(table_name, name = nil)
+          type_part = @sql_layer_version >= 10903 ?
+            " COLUMN_TYPE_STRING(table_schema, table_name, column_name), " :
+            " data_type||COALESCE('('||character_maximum_length||')', '('||numeric_precision||','||numeric_scale||')', ''), "
           select_rows(
             "SELECT column_name, "+
             "       column_default, "+
-            "       COLUMN_TYPE_STRING(table_schema, table_name, column_name), "+
+                    type_part +
             "       is_nullable "+
             "FROM information_schema.columns "+
             "WHERE table_schema = CURRENT_SCHEMA "+
