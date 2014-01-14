@@ -262,6 +262,9 @@ module ActiveRecord
           if @sql_layer_version < 10902
             raise "Unsupported FDB SQL Layer version: #{@sql_layer_version} (#{ver[0]})"
           end
+          if @sql_layer_version == 10902
+            warn "Connected to FDB SQL Layer with significant known limitations: #{ver[0]}"
+          end
 
           # TODO: Timezone when supported by SQL Layer
           #if ActiveRecord::Base.default_timezone == :utc
