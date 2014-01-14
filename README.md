@@ -10,10 +10,10 @@ This project provides connection adapter integration for ActiveRecord.
 
 ### Supported SQL Layer Versions
 
-The 1.9.3 is the minimum recommended version for use with this adapter.
+Version 1.9.3 is the minimum recommended release for use with this adapter.
 
 While 1.9.2 is technically supported, it is known to contain a number of
-limitations hindering full use (e.g. no FOREIGN KEY or INSERT of DEFAULT).
+limitations preventing complete support.
 
 All previous releases are unsupported.
 
