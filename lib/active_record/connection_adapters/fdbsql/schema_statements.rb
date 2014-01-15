@@ -381,18 +381,18 @@ module ActiveRecord
           SCHEMA_LOG_NAME = 'FDB_SCHEMA'
 
           NATIVE_DATABASE_TYPES = {
-            :primary_key  => { name: "serial primary key" },
-            :string       => { name: "varchar", limit: 255 },
-            :text         => { name: "clob" },
-            :integer      => { name: "integer" },
-            :float        => { name: "float" },
-            :decimal      => { name: "decimal" },
-            :datetime     => { name: "datetime" },
-            :timestamp    => { name: "timestamp" }, # NB: Alias for DATETIME as of 1.9.2
-            :time         => { name: "time" },
-            :date         => { name: "date" },
-            :binary       => { name: "blob" },
-            :boolean      => { name: "boolean" }
+            :primary_key  => { :name => "serial primary key" },
+            :string       => { :name => "varchar", :limit => 255 },
+            :text         => { :name => "clob" },
+            :integer      => { :name => "integer" },
+            :float        => { :name => "float" },
+            :decimal      => { :name => "decimal" },
+            :datetime     => { :name => "datetime" },
+            :timestamp    => { :name => "timestamp" }, # NB: Alias for DATETIME as of 1.9.2
+            :time         => { :name => "time" },
+            :date         => { :name => "date" },
+            :binary       => { :name => "blob" },
+            :boolean      => { :name => "boolean" }
           }
 
       end
