@@ -31,7 +31,7 @@ module ActiveRecord
       config[:port]     = 15432       unless config[:port]
       config[:username] = 'fdbsql'    unless config[:username]
       config[:password] = ''          unless config[:password]
-      config[:encoding] = 'UTF-8'     unless config[:encoding]
+      config[:encoding] = 'UTF8'      unless config[:encoding]
 
       if config.key?(:database)
         database = config[:database]
@@ -227,6 +227,10 @@ module ActiveRecord
 
         def sql_layer_version
           @sql_layer_version
+        end
+
+        def encoding
+          @config[:encoding]
         end
 
 
