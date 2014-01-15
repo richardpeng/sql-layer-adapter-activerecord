@@ -51,13 +51,13 @@ module ActiveRecord
 
       def structure_dump(filename)
         set_fdbsql_env
-        command = "fdbsqldump --no-data --output=#{Shellwords.escape(filename)} #{Shellwords.escape(configuration['database'])}"
+        command = "fdbsqldump --no-data --output #{Shellwords.escape(filename)} #{Shellwords.escape(configuration['database'])}"
         raise 'Error dumping database' unless Kernel.system(command)
       end
 
       def structure_load(filename)
         set_fdbsql_env
-        Kernel.system("fdbsqlcli --quiet --file=#{Shellwords.escape(filename)} #{configuration['database']}")
+        Kernel.system("fdbsqlcli --quiet --file #{Shellwords.escape(filename)} #{configuration['database']}")
       end
 
 
