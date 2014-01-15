@@ -21,12 +21,11 @@ group :pg do
 end
 
 group :development do
-  gem 'bcrypt-ruby', '~> 3.0.0'
-  gem 'bench_press'
-  gem 'm'
-  gem 'mocha'
-  gem 'nokogiri'
   gem 'rake', '~> 10.1.0'
-  gem 'shoulda', '2.10.3'
+
+  # For AR
+  gem 'bcrypt-ruby', '~> 3.0.0'
+  gem 'mocha', '~> 0.13.0', :require => false
+  gem 'nokogiri', '>= 1.4.5', '< 1.6'
 end
 
