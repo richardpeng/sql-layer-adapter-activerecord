@@ -298,6 +298,18 @@ module ActiveRecord
           )
         end
 
+        # Get the default character set for the current database
+        # TODO: Not currently accessible (or settable from this adapter)
+        def charset
+          'UTF8'
+        end
+
+        # Get the default collation for the current database
+        # TODO: Not currently accessible (or settable from this adapter)
+        def collation
+          'ucs_binary'
+        end
+
         # Returns a table's PRIMARY KEY column
         def primary_key(table_name)
           pk_and_sequence_for(table_name)[0]
