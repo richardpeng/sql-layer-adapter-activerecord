@@ -25,7 +25,7 @@ def test_files(with_unit, with_ar)
   end
   match_str = ENV['TESTMATCH']
   if match_str
-    files.keep_if { |f| f.match(match_str) }
+    files.delete_if { |f| !f.match(match_str) }
   end
   files
 end
